@@ -1,0 +1,110 @@
+\chapter{System Level Programmer's Model}
+
+\section{Exceptions}
+
+\label{sec:exc-defn}
+
+\subsection{Memory Exceptions}
+
+Xvpfloat load memory errors are propagated through the memory hierarchy and raise a \texttt{LD\_ACCESS\_FAULT} trap synchronously.
+The exception is reported in the following manner:
+\begin{itemize}[topsep=0pt]
+    \item The cause register (\textbf{mcause}) is set to value {\em 5} (\texttt{LD\_ACCESS\_FAULT}).
+    \item The trap value register (\textbf{mtval}) includes the memory address that generated the exception (64 bits).
+\end{itemize}
+
+\subsection{Environment Registers Exceptions}
+
+When using PSER instruction to set an Environment Regiter (see \ref{sec:env_ins}), a custom {\em VPFLOAT\_BAD\_CONFIG} RISC-V trap is raised synchronously.
+The cause register (\textbf{mcause}) is set to value {\em 48}.
+The trap value register (\textbf{mtval}) includes several flags to determine the issue as shown in~\ref{fig:Xvpfloat_bad_config_tval}. 
+
+\vspace{-0.2in}
+\begin{figure}[ht]
+\begin{center}
+\begin{tabular}{@{}L@{}I@{}S@{}I@{}I@{}I@{}I@{}}
+\\
+\instbitrange{63}{17} &
+\instbit{16} &
+\instbitrange{15}{4} &
+\instbit{3} &
+\instbit{2} &
+\instbit{1} &
+\instbit{0} \\
+\hline
+\multicolumn{1}{|c|}{0} &
+\multicolumn{1}{c|}{\rotatebox{90}{void~}} &
+\multicolumn{1}{c|}{0} &
+\multicolumn{1}{c|}{\rotatebox{90}{wpe~}} &
+\multicolumn{1}{c|}{\rotatebox{90}{ese~}} &
+\multicolumn{1}{c|}{\rotatebox{90}{rme~}} &
+\multicolumn{1}{c|}{\rotatebox{90}{bise~}} \\
+\hline
+47 & 1 & 12 & 1 & 1 & 1 & 1 \\
+\end{tabular}
+\end{center}
+\caption{RISC-V Xvpfloat \textbf{mtval} encoding for {\em VPFLOAT\_BAD\_CONFIG=48} trap.}
+\label{fig:Xvpfloat_bad_config_tval}
+\end{figure}
+
+List of \textbf{mtval} flags for {\em VPFLOAT\_BAD\_CONFIG=48} trap:
+\begin{itemize}[topsep=0pt]
+    \item bise: set when configuring an {\em evp} environment register and:
+    \begin{itemize}[noitemsep,topsep=0pt]
+        \item either $MS=(BIS-ES-1) \geq IEEE\_Msize_{MAX}$
+        \item or $MS < 2$ (mantissa size should be at least 2 bits to hold NaN values)
+    \end{itemize}
+    \item rme: set when configuring a {\em rm} field of an environment to an unsupported value.
+    \item ese: set when configuring an {\em evp} environment register and:
+    \begin{itemize}[noitemsep,topsep=0pt]
+        \item either $ES \geq IEEE\_Esize_{MAX}$
+        \item or $MS < 2$ (mantissa size should be at least 2 bits to hold NaN values)
+    \end{itemize}
+    \item wpe: set when configuring an {\em ec} environment register and $WP \geq IEEE\_Msize_{MAX}$.
+    \item void: set when setting a read-only field of an environment register to a non-zero value.
+\end{itemize}
+
+\section{Valid Hardware Configurations}
+\label{sec:hard_cfg}
+
+Chunk size is fixed to 64 bits in Xvpfloat v1.
+
+List of Xvpfloat hardware parameters:
+\begin{itemize}[topsep=0pt]
+    \item C: Number of 64 bits chunks of the internal mantissa (Figure~\ref{fig:vpr}).
+    \item MLEN: Size in bits of the internal mantissa (Figure~\ref{fig:vpr}).
+    \item ELEN: Size in bits of the internal exponent (Figure~\ref{fig:vpr}).
+    \item LLEN: Size in bits of the L field of internal floating point representation (Figure~\ref{fig:vpr}).
+    \item HLEN: Size in bits of the header of internal floating point representation (Figure~\ref{fig:vpr}).
+    \item VPLEN: Total size in bits of {\em P} registers.
+    \item IEEE\_Msize\textsubscript{MAX}: Maximum size in bits of IEEE extendable format mantissa in memory supported by the hardware.
+    \item IEEE\_Esize\textsubscript{MAX}: Maximum size in bits of IEEE extendable format exponent in memory supported by the hardware.
+    \item BIS\textsubscript{MAX}: Maximum size in bits of number in memory supported by hardware.
+    \item BYS\textsubscript{MAX}: Maximum size in bytes of number in memory supported by hardware.
+\end{itemize}
+
+C and ELEN are the two input parameters of the hardware. 
+The other parameters are derived from them. 
+The following equations describe constraints and relationships between them.
+
+% Due to using rs2 as chunk number in PMV.P.X
+$ 2 \leq C \leq 31$
+
+% See what would be the biggest IEEE extended number we would like to support one day
+$13 \leq ELEN \leq 54$
+
+$IEEE\_Esize_{MAX} = ELEN \implies 13 \leq IEEE\_Esize_{MAX} \leq 54$
+
+$MLEN = 64 \times C \implies 128 \leq MLEN \leq 1984$
+
+$IEEE\_Msize_{MAX} = MLEN \implies 128 \leq IEEE\_Msize_{MAX} \leq 1984$
+
+$LLEN = clog2( C ) \implies 1 \leq LLEN \leq 5$
+
+$HLEN = 1+4+ELEN+LLEN \implies 19 \leq HLEN \leq 64$
+
+$BYS_{MAX} = ceil( \frac{IEEE\_Msize_{MAX}+IEEE\_Esize_{MAX}+1}{8} ) \implies 18 \leq BYS_{MAX} \leq 255$
+
+$BIS_{MAX} = IEEE\_Msize_{MAX}+IEEE\_Esize_{MAX}+1 \implies 142 \leq BIS_{MAX} \leq 2037$
+
+$VPLEN = HLEN+MLEN \implies 149 \leq VPLEN \leq 2048$

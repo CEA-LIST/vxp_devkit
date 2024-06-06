@@ -1,0 +1,41 @@
+\chapter{Memory Model}
+\label{sec:mem_model}
+
+As mentioned in previous sections, the Xvpfloat extension provides additional instructions for writing or reading variable precision data in memory. 
+The Xvpfloat extensions implements a load-store memory architecture (like the integer "I" base ISA).
+
+Two important properties need to be considered when programming with the Xvpfloat extension.
+
+\begin{enumerate}
+    \item A given RISC-V core can issue different kinds of memory instructions (e.g. base ISA ("I") integer load/stores and Xvpfloat load/stores).
+    \item Integer load/stores and Xvpfloat load/stores share the same memory.
+\end{enumerate}
+
+These properties have implications in the memory coherency and the memory consistency models of the Xvpfloat extension.
+
+\section{Memory Coherency}
+\label{sec:mem_coherency}
+
+The memory coherency is defined as the property of the memory subsystem (in a shared-memory system) to provide a consistent view to the different cores accessing the memory. 
+This is, when two different cores access a given address, both need to see the same value. 
+This can be an issue in systems implementing private data caches on the different cores.
+
+Regarding the memory coherency, for a given core, the Xvpfloat extension assumes that the memory is shared and coherent between the different memory instructions from the different extensions (on a given core). 
+In case of multi-core software, as each can implement private cache memories, the memory coherency is not enforced by this ISA and therefore it is IMPLEMENTATION DEFINED.
+
+\section{Memory Consistency}
+\label{sec:mem_consistency}
+
+The memory consistency defines the order in which read and write operations (load/stores) are executed.
+
+Regarding the memory consistency, this version of the Xvpfloat extension enforces a serialization for Xvpfloat loads/stores in the same address for a single core. 
+For example, when the software issues a Xvpfloat store on an address, and then it issues a Xvpfloat load on the same address, the hardware guarantees that the load will read the last written value (from the same core).
+
+\textbf{This extension does not enforce a serial/sequential order between Xvpfloat memory accesses and the other kinds of memory accesses (e.g. integer) even when these are in the same address. 
+If the programmer needs to enforce this order, it needs to use memory fences}.
+
+The RISC-V base ISA provides the data "fence" instruction that ensures that all load/stores issued are completed before executing any new memory instructions. 
+This is, if the programmer needs to write the memory using integer memory instructions (respectively Xvpfloats), and then read these data back using Xvpfloat memory instructions (respectively integer), a fence instruction is needed after the former to ensure that the latter read the last written values.
+
+Regarding Xvpfloat load and stores on different addresses from the same core, the order is not specified. 
+Therefore, as before, if the software needs a specific order, it needs to issue data "fence" instructions.

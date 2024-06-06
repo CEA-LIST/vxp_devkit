@@ -1,0 +1,589 @@
+
+% Copyright 2023 CEA Commissariat a l'Energie Atomique et aux Energies Alternatives (CEA)
+% 
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+% 
+%     http://www.apache.org/licenses/LICENSE-2.0
+% 
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+% 
+%\title{Programming the VRP with VPFLoat++ }
+%\author{
+%  Jerome Fereyre, Cesar Fuguet, Yves Durand \\
+%  CEA Grenoble
+%}
+%\date{\today}
+
+\documentclass[11pt]{report}
+
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rfoot{ \thepage}
+%\lfoot{ \thepage}
+\cfoot{CEA Confidential}
+
+\begin{document}
+\begin{titlepage} % Suppresses headers and footers on the title page
+
+  \centering % Centre everything on the title page
+   \includegraphics[width=4cm]{List_logo} 
+	
+	\scshape % Use small caps for all text on the title page
+	
+	\vspace*{\baselineskip} % White space at the top of the page
+	
+	%------------------------------------------------
+	%	Title
+	%------------------------------------------------
+	
+	\rule{\textwidth}{1.6pt}\vspace*{-\baselineskip}\vspace*{2pt} % Thick horizontal rule
+	\rule{\textwidth}{0.4pt} % Thin horizontal rule
+	
+	\vspace{0.75\baselineskip} % Whitespace above the title
+	
+	{\LARGE Programming the VRP \\ with the VPFLoat Package \\} % Title
+	
+	\vspace{0.75\baselineskip} % Whitespace below the title
+	
+	\rule{\textwidth}{0.4pt}\vspace*{-\baselineskip}\vspace{3.2pt} % Thin horizontal rule
+	\rule{\textwidth}{1.6pt} % Thick horizontal rule
+	
+	\vspace{2\baselineskip} % Whitespace after the title block
+	
+	%------------------------------------------------
+	%	Subtitle
+	%------------------------------------------------
+	
+	User's Guide
+	
+	\vspace*{3\baselineskip} % Whitespace under the subtitle
+	
+	%------------------------------------------------
+	%	Editor(s)
+	%------------------------------------------------
+	
+	Contributors:
+	
+	\vspace{0.5\baselineskip} % Whitespace before the editors
+	
+	{\scshape Jerome Fereyre,\\ Cesar Fuguet,\\ Yves Durand \\} % Editor list
+	
+	\vspace{0.5\baselineskip} % Whitespace below the editor list
+	
+	\textit{CEA LIST \\ Grenoble} 
+	
+	\vfill % Whitespace between editor names and publisher logo
+	
+	\vspace{0.3\baselineskip} % Whitespace under the publisher logo
+	
+	February 2022 % Publication year
+	
+	{\large CEA Confidential} % Publisher
+
+\end{titlepage}
+%\maketitle
+
+
+\begin{abstract}
+  The VPFloat package is the combination of  C++ classes which provide a full C++ support for programming the VRP. Starting from a C++ program, It generates binary code for 2 platforms: its primary target is the VRP, but it can also work on a standard linux platform which supports MPFR.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\chapter{the VPFloat Package}
+
+\section{Description}
+  The VPFloat package is the combination of two C++ classes which provide a full C++ support for programming the VRP. Starting from a C++ program, It generates binary code for 2 platforms: its primary target is the VRP, but it can also work on a standard linux platform which supports MPFR.
+  
+\section{Installation}\label{installation}
+
+%\section{Prerequisite}\label{prequisite}
+section to be completed.
+The installation process creates 4 directories: \texttt{./lib}, \texttt{./include}, \texttt{examples}  and \texttt{./doc},  which correspond to the usual usage.
+\begin{table}[h!]
+  \begin{center}
+    \caption{VPFloat Package Structure.}
+    \label{tab:table1}
+    \begin{tabular}{l|c|r} % <-- Alignments: 1st column left, 2nd middle and 3rd right, with vertical lines in between
+      \textbf{directory} & \textbf{content} \\
+      \hline
+      \texttt{./include} &  Include files contain the symbol declarations: function, variables.  \\
+      \hline
+      \texttt{./lib} & Lib files are precompiled libraries.  \\
+      \hline
+      \texttt{./examples} & \emph{to be done}.  \\
+      \hline
+      \texttt{./doc} & this document.  \\
+      \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+\section{Compilation Options}
+section to be completed.
+
+% +++++++++++++++++++++++++++++++++++++++++++++
+\chapter{the VPFloat and VPFloatArray Classes}
+% +++++++++++++++++++++++++++++++++++++++++++++
+
+%\section{Language Reference}\label{reference}
+\section{Using The Classes}
+ The ``VPFloatPackage'' namespace must be visible from the user's naming space. The user's code should begin with following lines:
+\begin{verbatim}
+#include "VPFloat.hpp"
+using namespace VPFloatPackage;
+\end{verbatim}
+\section{Classes}
+The \texttt{VPFloat} class fully describes the computing environment.
+For an exhaustive description, the user should refer to the \texttt{VPFloat.hpp} include file.\\
+The VPFLoat++ basically defines 2 main classes:
+\begin{itemize}
+\item the \texttt{VPFloat} class, used for scalar quantities
+\item the \texttt{VPFloatArray} class, used for arrays
+\end{itemize}
+
+\subsection{the VPFloat Class} defines variable precision floating point variables.
+Variable creation is done via the standard class constructor which requires 3 arguments:
+\begin{itemize}
+\item exponent\_size: size of the exponent in bits 
+\item bis : total size of the variable in bits
+\item stride : 
+  Parameter \emph{stride\ } defines the actual variable footprint in bytes. Formally, the byte $bsize$ of a VPFloat variable is defined by:
+  \begin{equation}
+    bsize = stride \times ceil(BIS/8).
+  \end {equation}
+\end{itemize}
+Note that the significand size $significand\_size$ can be obtained from following formula:
+\begin{equation}
+  significand\_size = bis - exponent\_size - 1  
+\end{equation}
+As an example, following code creates the equivalent of a \texttt{double} variable with a total size of 64 bits, and an exponent size of 7 bits:
+\begin{verbatim}
+  VPFloat likeDouble (7,64,1);
+\end{verbatim}
+
+A more complete constructor may be used for creating VPFloat value, with 
+\begin{itemize}
+\item mantissa : sets the \textbf{first} chunk of the significand. the hidden leading one of the significand is not part of the first chunk.
+\item exponent : sets the exponent value (unbiased)
+  \item sign : sets the sign of the value
+\item exponent\_size: \emph{same as above}
+\item bis : \emph{same as above}
+\item stride : \emph{same as above}
+
+\end{itemize}
+
+
+The class comes with additional helper functions. The list below is not exhaustive.
+\begin{table}[h!]
+  \begin{center}
+    \caption{VPFloat helper functions.}
+    \label{tab:table1}
+    \begin{tabular}{l|c|r} % <-- Alignments: 1st column left, 2nd middle and 3rd right, with vertical lines in between
+      \textbf{function} & \textbf{return type} & \textbf{comment}\\
+      \hline
+      a.exponent() & int & exponent value (unbiased)\\
+      \hline
+      a.exponent(\emph{int e}) & none  & \textbf{sets} exponent to value $e$\\
+      \hline
+      a.mantissaChunk(\emph{int i}) & uint64\_t  & i-th chunk of significand value of \texttt{a} \\      
+      \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\subsubsection{Passing VPFloats in the Parameter List of a Function}
+Parameters of type \emph{VPFloat} must be passed by reference to a function, in order to avoid duplication of the parameter. As a consequence, they \textbf{must} be prefixed with an ampersand (\texttt{\&}) in the parameter list\footnote{Note that this syntax obeys to the rules of C++, but differs from the C usage.}.
+For example, function \emph{foo} has a VPFLoat parameter \emph{bar} in its signature. This writes:\\
+\begin{lstlisting}[language=C, caption = {VPFLoat example}]
+VPFloat function foo (VPFloat & bar) {
+ // ....
+}
+\end{lstlisting}
+
+Furthermore, if a parameter is not meant to be modified in the core of the function, it \emph{should} be passed with the \texttt{const} qualifier.
+
+\begin{lstlisting}[language=C, caption = {VPFLoat example}]
+VPFloat function foo (const VPFloat & bar) {
+ // bar will not be modified
+}
+\end{lstlisting}
+
+
+
+\subsection{the VPFloatArray Class} defines variable precision arrays floating point variables.
+Array initialisation is done via the standard class constructor which requires 4 arguments:
+\begin{itemize}
+\item exponent\_size: size of the exponent in bits 
+\item bis : total size of the variable in bits
+\item stride : 
+  Parameter \emph{stride\ } defines the distance in bytes between 2 array elements. Formally, the byte address$\&A[n]$ of element \texttt{A[n]} is defined by \footnote{In this formula, ampersand sign \& bares the usual meaning, i.e. ``pointer of A''}:
+  \begin{equation}
+    \&A[n] = \ast(\&A[0]+stride \times MBB \times n), MBB = ceil(BIS/8).
+  \end {equation}
+\item n : number of elements in the array
+\end{itemize}
+Note that the significand size $significand\_size$ can be obtained from following formula:
+\begin{equation}
+  significand\_size = bis - exponent\_size - 1  
+\end{equation}
+As an example, following code creates the equivalent of an 100 elements Array of \texttt{double} variable, each variable with a total size of 64 bits, and an exponent size of 7 bits:
+\begin{verbatim}
+  VPFloatArray likeDoubleArray (7,64,1,100);
+\end{verbatim}
+type VPFloatArray supports indexing \texttt{A[]} and  deferencing \texttt{*A}.
+The class comes with additional helper functions. The list below is not exhaustive.
+\begin{table}[h!]
+  \begin{center}
+    \caption{VPFloatArray helper functions.}
+    \label{tab:table2}
+    \begin{tabular}{l|c|r} % <-- Alignments: 1st column left, 2nd middle and 3rd right, with vertical lines in between
+      \textbf{function} & \textbf{return type} & \textbf{comment}\\
+      \hline
+      A.size() & int & number of elements\\
+      \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+\subsubsection{Passing VPFloatArray(s) in the Parameter List of a Function}
+Parameters of type \emph{VPFloatArray} must be passed by reference to a function, in order to avoid duplication of the parameter. As a consequence, they \textbf{must} be prefixed with an ampersand (\texttt{\&}) in the parameter list.
+
+
+% -------------------------------
+\subsection{Operations}
+% -------------------------------
+Type VPFloat supports the standard arithmetic unary operations (\texttt{-a}), dyadic operations (\texttt{a+b , a-b, a*b}), comparison (\texttt{a>b}) as well as division (\texttt{a/b}).
+It also supports standard operators such as square root (\texttt{sqrt(a)}), absolute value (\texttt{abs(a)}), etc. (see table \ref{tab:table3} for a complete list).
+\begin{table}[h!]
+  \begin{center}
+    \caption{VPFloat predefined operations}
+    \label{tab:table3}
+    \begin{tabular}{l|c|c|r} % <-- Alignments: 1st column left, 2nd middle and 3rd right, with vertical lines in between
+      \textbf{function} & \textbf{return type} & args & \textbf{comment}\\
+      \hline
+      abs & VPfloat & VPfloat \emph{V} & $|x|$ \\
+      \hline
+      sqrt & VPfloat & VPfloat \emph{V} & $\sqrt{x} $\\
+      \hline
+      pow2 & VPfloat & int \emph{i} & $2^{-i}$\\
+      \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\paragraph{Implicit type conversion}
+Operations between VPFloats of different sizes are legal (i.e.  exponent or bis or both). In the general case, an operation involving 2 VPFloat variables \texttt{V1} and \texttt{V2} of different characteristics produces an internal result with maximal precision and exponent. when assigned to a target variable \texttt{V3}, it is rounded according to the internal characteristics of \texttt{V3}.
+\paragraph{Explicit type conversion}
+section to be completed.
+
+% +++++++++++++++++++++++++++++++++++++++++++++  
+\chapter{The VBLAS classes}
+% +++++++++++++++++++++++++++++++++++++++++++++
+
+In theory, the VPFloat class is sufficient for implementing any linear kernel.
+Nevertheless, computing intensive functions such as inner product, matrix-vector multiplication, vector addition would be
+inefficient if they would only be implemented by the class operations.
+The VBLAS package provides optimized versions of these computing intensive functions. They are mostly implemented through direct calls to 
+assembly functions.
+\section{Class visibility}
+VBLAS class belongs to the same VPFloatPackage namespace. They are defined in another file \texttt{VBLAS.hpp} , which must must be visible from the user's naming space. The user's code should begin with following lines:
+\begin{verbatim}
+#include "VBLAS.hpp"
+\end{verbatim}
+According to the compilation and runtime options, one of the following case may occur:
+\begin{itemize}
+\item If the software runs on the VRP, the functions result in calls to optimized assembly routines,
+  \item , or if running in emulation mode on a linux environnement, the calls wrap to routines using MPFR.
+\end{itemize}
+
+\section{VBLAS functions}
+
+The list of functionalities is given in table \ref{tab:table4} ( by convention $A$ is a matrix $x$ and $y$ are vectors, $\alpha$ and $\beta$ are scalar ).
+For an exhaustive description, the user should refer to the \texttt{VBLAS.hpp} include file.\\
+
+
+\begin{table}[h!]
+  \begin{center}
+    \caption{VBLAS functionnalities}
+    \label{tab:table4}
+    \begin{tabular}{l|c|c|r} % <-- Alignments: 1st column left, 2nd middle and 3rd right, with vertical lines in between
+      \textbf{functionnality} & formal definition & \textbf{comment}\\
+      \hline
+      dot & $(y, x) = x^t\times y$ & inner product \\
+      \hline
+      axpy & $ y = \alpha . x + y$ & linear combination of vectors\\
+      \hline
+      mvm & $ y = \alpha . A \times x + \beta . y$ & matrix-vector multiplication\\
+      \hline
+      scal & $ y = \alpha . y $ & vector scaling\\ 
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\subsection{dot Function}
+% static void vdot( int precision, int n, const VPFloatArray x, const VPFloatArray y, VPFloat & res) {
+the \texttt{vdot} function computes the inner product of 2 VPFloat vector x and y.
+
+%\paragraph{input parameters for vdot:} 
+Its input parameters are described in table \ref{tab:tablevdot}
+\begin{table}[h!]
+  \begin{center}
+    \caption{vdot input parameters list}
+    \label{tab:tablevdot}
+    \begin{tabular}{l|c|c|r} % <-- Alignments: 1st column left, 2nd middle and 3rd right, with vertical lines in between
+      \textbf{name} & \texttt{type} & \textbf{comment}\\
+      \hline
+      precision & int & \emph{see below} \\ 
+      \hline
+      n & int & column number for vector x and y \\ 
+      \hline
+      x & VPFloatArray &  \\ 
+      \hline
+      y & VPFloatArray &  \\ 
+      \hline
+      res & VPFloat & result. noted \texttt{VPFloat \&} since res is overwritten \\ 
+      \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+\begin{itemize}
+\item parameter \texttt{precision} defines the significand bit length (not considering the leading ``1'') of the operations performed inside the function. 
+  \end{itemize}
+
+
+
+  \subsection{axpy Function}
+  Function \texttt{vaxpy} perform the addition of 2 VPFloatArray with scaling $ y = \alpha \dot x + y$. 
+
+  % static void vaxpy( int precision, int n, const VPFloat alpha, const VPFloatArray x, VPFloatArray y)
+
+Its input parameters are described in table \ref{tab:tablevaxpy}
+\begin{table}[h!]
+  \begin{center}
+    \caption{vaxpy input parameters list}
+    \label{tab:tablevaxpy}
+    \begin{tabular}{l|c|c|r} % <-- Alignments: 1st column left, 2nd middle and 3rd right, with vertical lines in between
+      \textbf{name} & \texttt{type} & \textbf{comment}\\
+      \hline
+      precision & int & \emph{see below} \\ 
+      \hline
+      n & int & column number for vector x and y \\ 
+      \hline
+      alpha & VPFloat & scaling factor on x \\ 
+      \hline
+      x & VPFloatArray &  \\ 
+      \hline
+      y & VPFloatArray & input and result. noted \texttt{VPFloat \&} since y is overwritten \\ 
+      \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+\begin{itemize}
+\item parameter \texttt{precision} defines the significand bit length (not considering the leading ``1'') of the operations performed inside the function. 
+  \end{itemize}
+
+  
+\subsection{mvm Function}
+The matrix-vector multiplication (\texttt{mvm}) performs different variants of $ y = \alpha . A \times x + \beta . y$.
+\begin{table}[h!]
+  \begin{center}
+    \caption{matrix-vector multiplication variants}
+    \label{tab:tablemvm}
+    \begin{tabular}{l|c|c|r} % <-- Alignments: 1st column left, 2nd middle and 3rd right, with vertical lines in between
+      \textbf{name} & \texttt{A type} & \texttt{$\alpha$ type} & \textbf{comment}\\
+      \hline
+      vgemvd & dense, double & double & (transposition not yet supported)\\ 
+      \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+
+%\paragraph{input parameters for vgemvd:} 
+the \texttt{vgemvd} function computes the matrix-vector product of a \textbf{dense, double} matrix A by a \textbf{VPFloatArray} vector X.
+\begin{table}[h!]
+  \begin{center}
+    \caption{vgemvd input parameters list}
+    \label{tab:table6}
+    \begin{tabular}{l|c|c|r} % <-- Alignments: 1st column left, 2nd middle and 3rd right, with vertical lines in between
+      \textbf{name} & \texttt{type} & \textbf{comment}\\
+      \hline
+      precision & int & \emph{see below} \\ 
+      \hline
+      trans & char & 'N' or 'T'. \emph{see below} \\ 
+      \hline
+      m & int & row number for matrix A \\ 
+      \hline
+      n & int & column number for matrix A \\ 
+      \hline
+      alpha & double & scaling factor on A \\ 
+      \hline
+      A & double * & dense format\\ 
+      \hline
+      lda & int & leading dimension of A \emph{see below}  \\ 
+      \hline
+      x & VPFloatArray &  \\ 
+      \hline
+      beta & VPFloat &  \\ 
+      \hline
+      y & VPFloat & input and result. noted \texttt{VPFloat \&} since y is overwritten \\ 
+      \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+\begin{itemize}
+\item parameter \texttt{precision} defines the significand bit length (not considering the leading ``1'') of the operations performed inside the function. 
+ %ce paramètre sera utilisé dans certains cas pour définir les variables internes à la fonction si il y en a, ainsi que la « working precision » (précision dans les environnements de calcul). Dans ce cas de WP, cette précision ne considère que les bits de la partie signifiant. Le paramètre est exprimé en bits.
+\item the \texttt{trans} parameter has following meaning:
+  \begin{equation}
+    if trans= 'N' or 'n', then y := \alpha \dot A \times x + \beta \dot y
+  \end{equation}
+  \begin{equation}
+  if trans= 'T' or 't', then y := \alpha \dot A^T \times x + \beta \dot y
+\end{equation}
+Any other value is considered as \texttt{'N'}.\\
+\item The lda parameter is effectively the y-stride of the matrix as it is laid out in linear memory.
+In a row-major layout (as it the case for the VRP), the address for element $A[i,j]$ is computed as $j+lda*i$. 
+  % It is perfectly valid to have an LDA value which is larger than the leading dimension of the matrix which is being operated on.
+  Typical cases where it is either useful or necessary to use a larger lda value are when you are operating on a sub matrix from a larger dense matrix.
+  \end{itemize}
+
+\subsection{scal Function}
+% static void vscal( int precision, int n, const VPFloat alpha, VPFloatArray & x)
+%\paragraph{input parameters for vscal :} 
+the \texttt{vscal} function vscal multiplies each element of  VPFloat vector x by a VPFloat scalar $\alpha$.
+
+%\paragraph{input parameters for vdot:} 
+Its input parameters are described in table \ref{tab:tablevscal}
+\begin{table}[h!]
+  \begin{center}
+    \caption{vscal input parameters list}
+    \label{tab:tablevdot}
+    \begin{tabular}{l|c|c|r} % <-- Alignments: 1st column left, 2nd middle and 3rd right, with vertical lines in between
+      \textbf{name} & \texttt{type} & \textbf{comment}\\
+      \hline
+      precision & int & \emph{see below} \\ 
+      \hline
+      n & int & column number for vector x and y \\ 
+      \hline
+      alpha & VPFloat & scaling factor on x \\ 
+      \hline
+      x & VPFloatArray & input and result. noted \texttt{VPFloat \&} since x is overwritten \\ 
+      \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+\begin{itemize}
+\item parameter \texttt{precision} defines the significand bit length (not considering the leading ``1'') of the operations performed inside the function. 
+  \end{itemize}
+
+\chapter{the VPFloatComputingEnvironment Class}
+This class is used to manage the "computing Environment" for vpfloat arithmetic operations. This Computing Environment is distinct from the memory storage format which is specific to each variable and set at initialization. 
+
+\begin{itemize}
+\item There is only one configuration, called Computing Environment,  for all arithmetic operations
+  \item If user need to change 
+    this environment, the modification must be done before each operation requiring this modification.
+    \item This class is not thread-safe: there is no guarantee on the effects of concurrent calls to its functions.
+    \end{itemize}
+    % set_precision(uint16_t a_precision)
+    % set_rounding_mode(VPFloatRoundingMode a_rounding_mode)
+%%    change the rounding mode used by the next vpfloat  arithmetic operations.
+%%             * Possible rounding mode are:
+%%             *   - VPFloatRoundingMode::VP_RNE
+%%             *   - VPFloatRoundingMode::VP_RTZ
+%%             *   - VPFloatRoundingMode::VP_RDN
+%%             *   - VPFloatRoundingMode::VP_RUP
+%%             *   - VPFloatRoundingMode::VP_RMM
+%             uint16_t get_precision(){
+    %Returns the current configured precision
+
+
+\chapter{Examples}\label{examples}
+
+This chapter discusses two examples:
+\begin{itemize}
+\item Computing an approximation of e is a simple use of VPFLoat scalars
+  \item The power method for computing the largest eigenvalue of a matrix involves the \texttt{vgemvd} function in VBLAS.
+\end{itemize}
+\section{Computing e with VPFloat Scalars}
+The example below appears as \texttt{text\_e.cpp} in directory \texttt{\.\/examples}. It computes an approximation of \emph{e} using the formula:
+\begin{equation}
+  e=\sum_{n=0}^{n=\infty} \frac{1}{n!}
+\end{equation}
+The  number of terms used to approximate the value is programmable and given by variable \texttt{n\_pts}.
+The example runs with 196 bits of significand. The first step is to set the internal precision $precision=196$ to this value.
+\begin{lstlisting}[language=C, caption = {VPFLoat example}]
+    int precision=196;  
+  /* 
+   * set INTERNAL precision
+   */
+  VPFloatComputingEnvironment::set_precision(precision);  
+\end{lstlisting}
+Next step is to compute the actual bit size of the VPFloat representation. Considering exponents of size $EXPONENT\_SIZE\_BITS$ we define the BIS parameter:
+
+\begin{lstlisting}[language=C, caption = {VPFLoat example}]
+  short myBis=precision+EXPONENT_SIZE_BITS+1;
+\end{lstlisting}
+
+We may now declare VPFLOAT variables using this parameter. Note that the last parameter, which is the ``stride size'', is set to 1. 
+
+\begin{lstlisting}[language=C, caption = {VPFLoat example}]
+  VPFloat Sum   (EXPONENT_SIZE_BITS, myBis,1);
+\end{lstlisting}
+
+For efficiency, we choose to represent the factorial $n!$ as a VPFLOAT from the start of the process, rather than by an integer.
+We keep an exponent size $OTHER\_EXPO\_SIZE=7$ in order to represent factorials up to $30!$ 
+
+\begin{lstlisting}[language=C, caption = {VPFLoat example}]
+  VPFloat fact_n(OTHER_EXPO_SIZE, myBis,1);
+\end{lstlisting}
+
+Computing the factorial requires to iteratively multiply it with the integer loop indix $i$. This operation requires a cast of $i$ to \texttt{double}, since multiplication of VPFloat with integer is not supported. 
+
+\begin{lstlisting}[language=C, caption = {VPFLoat example}]
+ for (int i=1; i < n_pts; i++) {
+    fact_n=fact_n*(double)i;  // VPfloat*double gives VPFloat
+    // ...
+  }
+\end{lstlisting}
+
+
+
+\begin{lstlisting}[language=C, caption = {VPFLoat example}]
+  /* 
+   * set VPFLOAT format for reals
+   */
+  short myBis=precision+EXPONENT_SIZE_BITS+1;
+  VPFloat Sum   (EXPONENT_SIZE_BITS, myBis,STRIDE_SIZE_BITS);
+  VPFloat fact_n(EXPONENT_SIZE_BITS, myBis,STRIDE_SIZE_BITS);
+  VPFloat ONE   (EXPONENT_SIZE_BITS, myBis,STRIDE_SIZE_BITS);
+
+  ONE=1.0;
+  
+  fact_n = 1.0;
+  Sum =1.0; // 1/0!
+  for (int i=1; i < n_pts; i++) {
+    fact_n=fact_n*(double)i;  // VPfloat*double gives VPFloat
+    Sum += ONE/fact_n;
+  }
+  fprintf(stderr," e ~ %.17e after %d iterations\n",(double)Sum,n_pts);
+
+\end{lstlisting}
+
+\section{Computing matrix power  with VBLAS}
+
+
+
+\bibliographystyle{abbrv}
+\bibliography{ManualVPFloat}
+
+\end{document}

@@ -1,0 +1,74 @@
+%=======================================================================
+% riscv-spec.tex
+%-----------------------------------------------------------------------
+
+\documentclass[twoside,11pt]{book}
+
+% Fix copy/pasting of ligatures in Acrobat
+\input{glyphtounicode.tex}
+\pdfgentounicode=1 %
+
+\input{preamble}
+
+\newcommand{\specrev}{\mbox{1.1.2}}
+\newcommand{\specmonthyear}{\mbox{November 2022}}
+
+\begin{document}
+
+\title{\vspace{-0.7in}\Large {\bf The RISC-V Xvpfloat Instruction Set Extension Manual} \\
+  \large {\bf Volume I: Unprivileged ISA} \\
+  Document Version \specrev
+  \vspace{-0.1in}}
+
+\author{Editors: Eric Guthmuller$^{1}$ \\
+  $^{1}$CEA List \\
+  {\tt eric.guthmuller@cea.fr} \\
+  \today
+}
+\date{} 
+\maketitle
+
+Contributors to all versions of the spec in
+alphabetical order :
+Riccardo Alidori,
+Andrea Bocco,
+Yves Durand,
+Jérôme Fereyre,
+Cesar Fuguet Tortolero,
+Eric Guthmuller.
+
+This document is propriety of CEA.
+
+
+
+\markboth{{\em CEA Confidential} - Volume I: RISC-V Xvpfloat Unprivileged ISA V\specrev}
+{{\em CEA Confidential} - Volume I: RISC-V Xvpfloat Unprivileged ISA V\specrev}
+\thispagestyle{empty}
+
+\frontmatter
+
+\input{preface}
+
+{\hypersetup{linktoc=all,hidelinks}
+\tableofcontents
+}
+
+\mainmatter
+
+\input{intro}
+\input{app_model}
+\input{sys_model}
+\input{mem_model}
+\input{isa}
+\input{sys_registers}
+%\input{debug}
+%\input{perf_monitor}
+
+\appendix
+\input{memory_format}
+\input{implementations}
+
+\bibliographystyle{plain}
+\bibliography{riscv-Xvpfloat-spec}
+
+\end{document}

@@ -1,0 +1,118 @@
+\chapter{Introduction}
+
+Xvpfloat is a RISC-V instruction-set architecture (ISA) extension to support floating point computation with variable extended precision.
+The goals of this extension include:
+\vspace{-0.1in}
+\begin{itemize}
+\parskip 0pt
+\itemsep 1pt
+\item Separate memory representation and internal representation of floating point numbers.
+\item Support IEEE-754 2008 standard~\cite{ieee754-2008} format in memory with support for both extendable and extended formats where total size is a multiple of 8 bits.
+\item Internal representation holds automatically computed precision information.
+\item Fast switching between multiple memory formats and rounding modes.
+\end{itemize}
+\vspace{-0.1in}
+
+%\begin{commentary}
+%  Commentary on our design decisions is formatted as in this
+%  paragraph.  This non-normative text can be skipped if the reader is
+%  only interested in the specification itself.
+%\end{commentary}
+
+\section{RISC-V Xvpfloat ISA Extension Overview}
+
+Xvpfloat is an extension of RV64I ISA.
+It is compatible with other optional RISC-V standard extensions, in particular but not limited to M, A, F and D extensions.
+
+Internal format is fixed and defined in Section~\ref{sec:vpregs}.
+However, a special field {\em L} holds information about the current valid portion of the mantissa.
+This information can be used in an \implementationdefined\ manner to optimize compute performance.
+
+In-memory format of Xvpfloat extension is IEEE-754 2008 extendable format for floating point numbers.
+Mantissa and exponent sizes of encoded floating point numbers can be chosen with arbitratry values in \implementationdefined\ boundaries as defined in Section~\ref{sec:hard_cfg}. 
+Appendix~\ref{sec:mem_format} expands briefly on the IEEE-754 2008 standard~\cite{ieee754-2008} format and its support in the Xvpfloat extension.
+
+\section{Memory}
+
+Memory is the same as defined by the RISC-V base specification.
+
+Executing each Xvpfloat machine instruction entails one or more memory accesses, subdivided into {\em implicit} and {\em explicit} accesses.
+For each instruction executed, an {\em implicit} memory read (instruction fetch) is done to obtain the encoded instruction to execute.
+Load and store defined in this extension can produce multiple memory accesses at machine level due to hardware alignement constraints.
+
+\section{Xvpfloat Instruction Encoding}
+
+Xvpfloat instructions are encoded in the {\em custom-0} major opcode space.
+Multiple sub-formats are defined in Figure~\ref{fig:Xvpfloatinstformats} and encode Xvploat instructions.
+
+\begin{figure}[h]
+  \begin{center}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}p{0.8in}@{}p{0.6in}@{}p{0.8in}@{}p{0.8in}@{}p{0.6in}@{}p{0.8in}@{}p{1in}@{}l}
+  \\
+  \instbitrange{31}{28} &
+  \instbitrange{27}{25} &
+  \instbitrange{24}{20} &
+  \instbitrange{19}{15} &
+  \instbitrange{14}{12} &
+  \instbitrange{11}{7} &
+  \instbitrange{6}{0} \\
+  \cline{1-7}
+  \multicolumn{2}{|c|}{Xop7} &
+  \multicolumn{1}{c|}{rs2} &
+  \multicolumn{1}{c|}{rs1} &
+  \multicolumn{1}{c|}{env} &
+  \multicolumn{1}{c|}{rd} &
+  \multicolumn{1}{c|}{{\em custom-0}} &
+  ~Re-type \\
+  \cline{1-7}
+  \multicolumn{2}{|c|}{Xop7} &
+  \multicolumn{1}{c|}{rs2} &
+  \multicolumn{1}{c|}{rs1} &
+  \multicolumn{1}{c|}{rm} &
+  \multicolumn{1}{c|}{rd} &
+  \multicolumn{1}{c|}{{\em custom-0}} &
+  ~Rr-type \\
+  \cline{1-7}
+  \multicolumn{2}{|c|}{Xop7} &
+  \multicolumn{1}{c|}{rs2} &
+  \multicolumn{1}{c|}{rs1} &
+  \multicolumn{1}{c|}{type} &
+  \multicolumn{1}{c|}{rd} &
+  \multicolumn{1}{c|}{{\em custom-0}} &
+  ~Rt-type \\
+  \cline{1-7}
+  \multicolumn{1}{|c|}{Xop4} &
+  \multicolumn{1}{c|}{imm[7:5]} &
+  \multicolumn{1}{c|}{imm[4:0]} &
+  \multicolumn{1}{c|}{rs1} &
+  \multicolumn{1}{c|}{env} &
+  \multicolumn{1}{c|}{rd} &
+  \multicolumn{1}{c|}{{\em custom-0}} &
+  ~LI-type \\
+  \cline{1-7}
+  \multicolumn{1}{|c|}{Xop4} &
+  \multicolumn{1}{c|}{imm[7:5]} &
+  \multicolumn{1}{c|}{rs2} &
+  \multicolumn{1}{c|}{rs1} &
+  \multicolumn{1}{c|}{env} &
+  \multicolumn{1}{c|}{imm[4:0]} &
+  \multicolumn{1}{c|}{{\em custom-0}} &
+  ~SI-type \\
+  \cline{1-7}
+  \end{tabular}
+  \end{center}
+  \caption{RISC-V Xvpfloat instruction formats, derived from R-type standard format.}
+  \label{fig:Xvpfloatinstformats}
+  \end{figure}
+
+\section{Exceptions, Traps, and Interrupts}
+\label{sec:trap-defn}
+
+RISC-V synchronous traps may be raised when reading from memory or configuring environment registers.
+See section~\ref{sec:exc-defn} for definitions of these traps and details on their cause.
+
+\section{UNSPECIFIED Behaviors and Values}
+
+The architecture fully describes what implementations must do and any constraints on what they may do.
+In cases where the architecture intentionally does not constrain implementations, the term \unspecified\ is explicitly used.

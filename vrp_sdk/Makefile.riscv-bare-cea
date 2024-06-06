@@ -1,0 +1,128 @@
+# Copyright 2023 CEA Commissariat a l'Energie Atomique et aux Energies Alternatives (CEA)
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##
+#  @file   Makefile
+#  @author Cesar Fuguet-Tortolero
+##
+ARCH_PREFIX ?= riscv64-unknown-elf
+AS_PREFIX   ?= /home/560.1.361-EPI/vrp-binutils/Scientific-7.9/isa-vrp-v1.1.0
+CC_PREFIX   ?= /home/560.1.361-EPI/xtools/riscv64-unknown-elf-newlib
+AR          := $(CC_PREFIX)/bin/$(ARCH_PREFIX)-ar
+CC          := $(CC_PREFIX)/bin/$(ARCH_PREFIX)-gcc
+CXX         := $(CC_PREFIX)/bin/$(ARCH_PREFIX)-g++
+AS          := $(AS_PREFIX)/bin/$(ARCH_PREFIX)-as
+LD          := $(CC_PREFIX)/bin/$(ARCH_PREFIX)-gcc
+OD          := $(AS_PREFIX)/bin/$(ARCH_PREFIX)-objdump -Mno-aliases
+OC          := $(CC_PREFIX)/bin/$(ARCH_PREFIX)-objcopy
+SZ          := $(CC_PREFIX)/bin/$(ARCH_PREFIX)-size
+ECHO        ?= @echo
+BIN2MEM     = ../../scripts/bin2mem.py
+MKDIR       = mkdir -p
+RM          = rm -f
+RMDIR       = rmdir
+Q           ?= @
+
+###
+#  initialize source variables
+###
+COMMONFLAGS  = -Wall -O3 -funroll-loops -lc -lgcc
+TARGET      ?= libvrp.riscvbarecea
+CFLAGS       = $(COMMONFLAGS)
+CXXFLAGS     = $(COMMONFLAGS) -lstdc++
+
+###
+#  set vutils library source files
+###
+HDRS     += include/VRPSDK/vutils.h
+SRCS     += src/VRPSDK/vutils/vutils.c
+
+###
+#  set vmath library source files
+###
+HDRS     += include/VRPSDK/vmath.h
+SRCS     += src/VRPSDK/vmath/vmath.c
+
+###
+#  set vblas library source files
+###
+HDRS     += include/VRPSDK/vblas.h \
+            include/VRPSDK/vblas_mt.h
+
+SRCS     += src/VRPSDK/vblas/vblas_vcopy.c \
+            src/VRPSDK/vblas/vblas_vscal.c \
+            src/VRPSDK/vblas/vblas_vaxpy.c \
+            src/VRPSDK/vblas/vblas_vdot.c \
+            src/VRPSDK/vblas/vblas_vgemv.c \
+            src/VRPSDK/vblas/vblas_vtrsv.c \
+            src/VRPSDK/vblas_mt/vblas_mt.c \
+            src/VRPSDK/vblas_mt/vblas_mt_vgemv.c
+
+###
+#  set spvblas library source files
+###
+HDRS     += include/VRPSDK/spvblas.h \
+            include/VRPSDK/spvblas/vusmv/vusmv.h
+
+SRCS     += src/VRPSDK/spvblas/vusmv/vusmv.c \
+            src/VRPSDK/spvblas/vusmv/CSR/CSR_vusmv_NxM.c \
+            src/VRPSDK/spvblas/vusmv/BCSR/BCSR_vusmv_NxM.c \
+            src/VRPSDK/spvblas/vusmv/BCSR/BCSR_vusmv_1x1.c \
+            src/VRPSDK/spvblas/vusmv/BCSR/BCSR_vusmv_2x1.c \
+            src/VRPSDK/spvblas/vusmv/BCSR/BCSR_vusmv_3x1.c \
+            src/VRPSDK/spvblas/vusmv/BCSR/BCSR_vusmv_4x1.c \
+            src/VRPSDK/spvblas/vusmv/BCSR/BCSR_vusmv_5x1.c \
+            src/VRPSDK/spvblas/vusmv/BCSR/BCSR_vusmv_6x1.c \
+            src/VRPSDK/spvblas/vusmv/BCSR/BCSR_vusmv_7x1.c \
+            src/VRPSDK/spvblas/vusmv/BCSR/BCSR_vusmv_8x1.c
+
+INCLUDES += -I$(RVB_HOME)/include \
+            -I$(RVB_HOME)/bsp/$(BSP)/include \
+            -I$(RVB_HOME)/drivers/clint/include \
+            -I$(RVB_HOME)/drivers/hwpf_dcache/include \
+            -I$(MATRIX_SDK_HOME)/include
+
+###
+#  set compilation flags
+###
+CPUFLAGS  = -march=rv64imac -mabi=lp64 -mcmodel=medany
+
+ASFLAGS  ?= $(CPUFLAGS) $(INCLUDES)
+
+CFLAGS   += $(CPUFLAGS) $(INCLUDES) \
+           -mrelax \
+           -ffreestanding \
+           -ffunction-sections \
+           -fdata-sections \
+           -nostdlib \
+           -static \
+           -u __printf_float \
+           -B$(AS_PREFIX)/riscv64-unknown-elf/bin \
+           -B$(CC_PREFIX)/bin \
+           -B$(CC_PREFIX)/libexec/gcc/$(ARCH_PREFIX)/9.2.0 \
+           -B$(CC_PREFIX)/lib/gcc/$(ARCH_PREFIX)/9.2.0 \
+           -DVRP
+
+CXXFLAGS += $(CPUFLAGS) $(INCLUDES) \
+           -nostdlib \
+           -ffreestanding \
+           -ffunction-sections \
+           -fdata-sections \
+           -nostdlib \
+           -static \
+           -u __printf_float \
+           -B$(AS_PREFIX)/riscv64-unknown-elf/bin \
+           -B$(CC_PREFIX)/bin \
+           -B$(CC_PREFIX)/libexec/gcc/$(ARCH_PREFIX)/9.2.0 \
+           -B$(CC_PREFIX)/lib/gcc/$(ARCH_PREFIX)/9.2.0 \
+           -DVRP

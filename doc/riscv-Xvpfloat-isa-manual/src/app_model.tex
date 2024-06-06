@@ -1,0 +1,502 @@
+\chapter{Application level programmer's model}
+
+\section{Integer Registers}
+
+As the Xvpfloat ISA is an extension of RV64I RISC-V ISA, this specification assumes that the 32 RV64I 64 bits integer registers are implemented.
+
+\section{Floating Point Registers}
+
+\label{sec:vpregs}
+
+The Xvpfloat extension provides 32 {\em P} registers that hold variable precision floating point numbers.
+These registers are represented in Figure~\ref{fig:vprs}.
+
+\begin{figure}[ht]
+    {\footnotesize
+    \begin{center}
+    \begin{tabular}{@{}p{2in}@{}l}
+    \instbitrange{VPLEN-1}{0}                              & ~Numbering    \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p0\ \ \ \ \ }}  & ~0            \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p1\ \ \ \ \ }}  & ~1            \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p2\ \ \ \ \ }}  & ~2            \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p3\ \ \ \ \ }}  & ~3            \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p4\ \ \ \ \ }}  & ~4            \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p5\ \ \ \ \ }}  & ~5            \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p6\ \ \ \ \ }}  & ~6            \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p7\ \ \ \ \ }}  & ~7            \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p8\ \ \ \ \ }}  & ~8            \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p9\ \ \ \ \ }}  & ~9            \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p10\ \ \ \ \ }} & ~10           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p11\ \ \ \ \ }} & ~11           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p12\ \ \ \ \ }} & ~12           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p13\ \ \ \ \ }} & ~13           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p14\ \ \ \ \ }} & ~14           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p15\ \ \ \ \ }} & ~15           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p16\ \ \ \ \ }} & ~16           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p17\ \ \ \ \ }} & ~17           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p18\ \ \ \ \ }} & ~18           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p19\ \ \ \ \ }} & ~19           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p20\ \ \ \ \ }} & ~20           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p21\ \ \ \ \ }} & ~21           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p22\ \ \ \ \ }} & ~22           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p23\ \ \ \ \ }} & ~23           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p24\ \ \ \ \ }} & ~24           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p25\ \ \ \ \ }} & ~25           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p26\ \ \ \ \ }} & ~26           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p27\ \ \ \ \ }} & ~27           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p28\ \ \ \ \ }} & ~28           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p29\ \ \ \ \ }} & ~29           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p30\ \ \ \ \ }} & ~30           \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ p31\ \ \ \ \ }} & ~31           \\ \cline{1-1}
+    \multicolumn{1}{c}{VPLEN}                              &               \\
+    \end{tabular}
+    \end{center}
+    }
+    \caption{RISC-V Xvpfloat extension floating-point registers.}
+    \label{fig:vprs}
+\end{figure}
+
+Format of {\em P} registers is shown in Figure~\ref{fig:vpr}.
+It includes the following fields:
+\begin{itemize}[topsep=0pt]
+    \item S: Sign bit
+    \item Summary bits:
+    \begin{itemize}[topsep=0pt]
+        \item qNaN: quiet NaN flag
+        \item sNaN: signed NaN flag
+        \item inf: infinite flag
+        \item res0 : reserved bit (fixed to 0)
+        \item zero: data is zero flag
+        \item res1 : reserved bit (fixed to 1)
+    \end{itemize}
+    \item L: Number of consecutive valid 64 bits chunks
+    \item E: Exponent encoded in 2's complement
+    \item M: Mantissa, implicitly normalized (the hidden bit is set to 1)
+\end{itemize}
+
+An alternate view based on 64-bit chunks is used when moving data between {\em X} and {\em P} registers with PMV.P.X and PMV.X.P instructions.
+
+\vspace{-0.2in}
+\begin{figure}[ht]
+\begin{center}
+\begin{tabular}{@{}I@{}I@{}I@{}I@{}I@{}I@{}I@{}F@{}S@{}R@{}R@{}R@{}}
+    \\
+    \instbit{VPLEN-1} &
+    % \instbitrange{VPLEN-2}{VPLEN-7} % 
+    & & & & & &
+    % \instbitrange{LSIZE+ESIZE+MSIZE-1}{ESIZE+MSIZE} 
+    &
+    % \instbitrange{ESIZE+MSIZE-1}{MSIZE} 
+    & & &
+    \instbitrange{}{0} \\
+    \hline
+    \multicolumn{1}{|c|}{S} &
+    \multicolumn{6}{c|}{summ bits} &
+    \multicolumn{1}{c|}{len (L)} &
+    \multicolumn{1}{c|}{exponent (E)} &
+    \multicolumn{3}{c|}{mantissa (M)} \\
+    \hline
+    \multicolumn{1}{|c|}{\rotatebox{90}{sign~}} &
+    \multicolumn{1}{c|}{\rotatebox{90}{qNaN~}} &
+    \multicolumn{1}{c|}{\rotatebox{90}{sNaN~}} &
+    \multicolumn{1}{c|}{\rotatebox{90}{inf~}} &
+    \multicolumn{1}{c|}{\rotatebox{90}{res0~}} &
+    \multicolumn{1}{c|}{\rotatebox{90}{zero~}} &
+    \multicolumn{1}{c|}{\rotatebox{90}{res1~}} &
+    \multicolumn{4}{c}{} \\
+    \cline{1-7}
+    \\
+    %\multicolumn{1}{c}{1} & \multicolumn{6}{c}{6} & \multicolumn{1}{c}{LSIZE} & \multicolumn{1}{c}{ESIZE} & \multicolumn{1}{c}{MSIZE} \\
+    1 & 1 & 1 & 1 & 1 & 1 & 1 & LLEN & ELEN & \multicolumn{3}{c}{MLEN} \\
+    & & & & & & & & &
+    \\
+    \multicolumn{12}{c}{Chunk-based representation:} \\
+    \instbitrange{HLEN-1}{} &
+    \multicolumn{7}{c}{} & 
+    \instbitrange{}{0} &
+    \instbitrange{63}{0} &
+    &
+    \instbitrange{63}{0} \\ [-0.15in]
+    \hline
+    \multicolumn{9}{|c|}{header} & 
+    \multicolumn{1}{c|}{mchunk\textsubscript{0}} & 
+    \multicolumn{1}{c|}{\dots}   &
+    \multicolumn{1}{c|}{mchunk\textsubscript{$C-1$}} \\
+    \hline
+\end{tabular}
+\end{center}
+\caption{RISC-V Xvpfloat extension floating-point register format.}
+\label{fig:vpr}
+\end{figure}
+
+The summary bits have a priority order when more than one bit is set: sNaN is has higher priority than qNaN, that has higher priority than inf, that has higher priority than zero, that has higher priority than number without one of these flag set.
+The flags res0 and res1 are two flags reserved for internal use that cannot be modified by the programmer.
+They have fixed values: res0 is fixed to 0, and res1 is fixed to 1.
+
+\section{Environment Registers}
+
+Xvpfloat extension provides 24 environment registers split in 3 blocks of 8 registers as shown in Figure~\ref{fig:vpenvs}:
+\begin{itemize}[topsep=0pt]
+    \item evp0..7: environment registers for variable precision load/store instructions.
+    \item efp0..7: environment registers for half/float/double precision load/store instructions.
+    \item ec0..7: environment registers for arithmetic instructions.
+\end{itemize}
+
+\begin{figure}[htbp]
+    {\footnotesize
+    \begin{center}
+    \begin{tabular}{@{}p{2in}@{}l}
+    \instbitrange{63}{0}                                    & ~Numbering  \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ evp0\ \ \ \ \ }} & ~0          \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ evp1\ \ \ \ \ }} & ~1          \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ evp2\ \ \ \ \ }} & ~2          \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ evp3\ \ \ \ \ }} & ~3          \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ evp4\ \ \ \ \ }} & ~4          \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ evp5\ \ \ \ \ }} & ~5          \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ evp6\ \ \ \ \ }} & ~6          \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ evp7\ \ \ \ \ }} & ~7          \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ efp0\ \ \ \ \ }} & ~8          \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ efp1\ \ \ \ \ }} & ~9          \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ efp2\ \ \ \ \ }} & ~10         \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ efp3\ \ \ \ \ }} & ~11         \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ efp4\ \ \ \ \ }} & ~12         \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ efp5\ \ \ \ \ }} & ~13         \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ efp6\ \ \ \ \ }} & ~14         \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ efp7\ \ \ \ \ }} & ~15         \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ ec0\ \ \ \ \ }}  & ~16         \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ ec1\ \ \ \ \ }}  & ~17         \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ ec2\ \ \ \ \ }}  & ~18         \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ ec3\ \ \ \ \ }}  & ~19         \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ ec4\ \ \ \ \ }}  & ~20         \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ ec5\ \ \ \ \ }}  & ~21         \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ ec6\ \ \ \ \ }}  & ~22         \\ \cline{1-1}
+    \multicolumn{1}{|c|}{\reglabel{\ \ \ \ ec7\ \ \ \ \ }}  & ~23         \\ \cline{1-1}
+    \multicolumn{1}{c}{64}                                  &            \\
+    \end{tabular}
+    \end{center}
+    }
+    \caption{RISC-V Xvpfloat extension environment registers.}
+    \label{fig:vpenvs}
+\end{figure}
+
+Figure~\ref{fig:evp} describes the format of evp\textsubscript{i} variable precision environments.
+It includes the following fields (see Section~\ref{sec:ls_ins} for more details on the usage of these fields):
+\begin{itemize}
+    \item rm: rounding mode as defined in Table~\ref{rm}.
+    Setting this field to an unsupported rounding mode raises an exception.
+
+    \item stride: a 16-bit field that holds $STRIDE-1$, where STRIDE is used for variable precision indexed memory accesses.
+    Maximum value authorized for this field is 65535, so a resulting stride of 65536.
+    This field stores an element number, thus the resulting address offset is multiplied by the size of the variable precision value in memory.
+
+    \item es: a 8-bit field that holds $ES-1$ where $ES$ is the exponent size of the variable precision number in memory.
+    Maximum value authorized for this field is $IEEE\_Esize_{MAX}-1$.
+    Setting this field to a higher value raises an exception.
+
+    \item bis: a 16-bit field that holds $BIS-1$ where $BIS$ is the total size in bits of the scalar floating point number in memory.
+    Maximum value authorized for this field is $IEEE\_Esize_{MAX}+IEEE\_Msize_{MAX}+1-1$.
+    Setting this field to a higher value raises an exception.
+
+\end{itemize}
+
+\begin{figure}[htbp]
+\vspace{-0.2in}
+\begin{center}
+\begin{tabular}{@{}O@{}O@{}Y@{}F@{}W@{}O@{}}
+    \\
+    \instbitrange{63}{48} &
+    \instbitrange{47}{32} &
+    \instbitrange{31}{24} &
+    \instbitrange{23}{19} &
+    \instbitrange{18}{16} &
+    \instbitrange{15}{0} \\
+    \hline
+    \multicolumn{1}{|c|}{0's} &
+    \multicolumn{1}{c|}{stride} &
+    \multicolumn{1}{c|}{es} &
+    \multicolumn{1}{c|}{0's} &
+    \multicolumn{1}{c|}{rm} &
+    \multicolumn{1}{c|}{bis} \\
+    \hline
+    %\multicolumn{1}{c}{1} & \multicolumn{6}{c}{6} & \multicolumn{1}{c}{LSIZE} & \multicolumn{1}{c}{ESIZE} & \multicolumn{1}{c}{MSIZE} \\
+    16 & 16 & 8 & 5 & 3 & 16 \\
+\end{tabular}
+\end{center}
+\caption{RISC-V Xvpfloat extension {\em evp} environment register format for extended load/store.}
+\label{fig:evp}
+\end{figure}
+
+Figure~\ref{fig:efp} describes the format of efp\textsubscript{i} standard precision environments.
+It includes the following fields (see Section~\ref{sec:ls_ins} for more details on the usage of these fields):
+\begin{itemize}[topsep=0pt]
+    \item rm: Rounding Mode as defined in Table~\ref{rm}.
+    Setting this field to an unsupported rounding mode raises an exception.
+    \item stride: a 16-bit field that holds $STRIDE-1$, where STRIDE is used for half/float/double precision indexed memory accesses.
+    Maximum value authorized for this field is 65535, so a resulting stride of 65536.
+    This field stores an element number, thus the resulting address offset is multiplied by the size of the value in memory (either 2/4/8 for half/float/double respectively).
+\end{itemize}
+
+\begin{figure}[htbp]
+    \vspace{-0.2in}
+    \begin{center}
+    \begin{tabular}{@{}>{\centering\arraybackslash}p{3.8in}@{}W@{}O@{}}
+        \\
+        \instbitrange{63}{19} &
+        \instbitrange{18}{16} &
+        \instbitrange{15}{0} \\
+        \hline
+        \multicolumn{1}{|c|}{0's} &
+        \multicolumn{1}{c|}{rm} &
+        \multicolumn{1}{c|}{stride} \\
+        \hline
+        %\multicolumn{1}{c}{1} & \multicolumn{6}{c}{6} & \multicolumn{1}{c}{LSIZE} & \multicolumn{1}{c}{ESIZE} & \multicolumn{1}{c}{MSIZE} \\
+        45 & 3 & 16 \\
+    \end{tabular}
+    \end{center}
+    \caption{RISC-V Xvpfloat extension {\em efp} environment register format for half/float/double load/store.}
+    \label{fig:efp}
+\end{figure}
+
+Figure~\ref{fig:ec} describes the format of ec\textsubscript{i} arithmetic environments.
+It includes the following fields (see Section~\ref{sec:arith_ins} for more details on the usage of these fields):
+\begin{itemize}[topsep=0pt]
+    \item rm: Rounding Mode as defined in Table~\ref{rm}.
+    Setting this field to an unsupported rounding mode raises an exception.
+    \item wp: a 16-bit field that holds $WP-1$ where WP (Working Precision) is the mantissa precision in bits of the arithmetic computation result.
+    Maximum value authorized for this field is $MLEN-1$.
+    Setting this field to a higher value raises an exception.
+\end{itemize}
+
+\begin{figure}[htbp]
+    \vspace{-0.2in}
+    \begin{center}
+    \begin{tabular}{@{}>{\centering\arraybackslash}p{3.8in}@{}W@{}O@{}}
+        \\
+        \instbitrange{63}{19} &
+        \instbitrange{18}{16} &
+        \instbitrange{15}{0} \\
+        \hline
+        \multicolumn{1}{|c|}{0's} &
+        \multicolumn{1}{c|}{rm} &
+        \multicolumn{1}{c|}{wp} \\
+        \hline
+        %\multicolumn{1}{c}{1} & \multicolumn{6}{c}{6} & \multicolumn{1}{c}{LSIZE} & \multicolumn{1}{c}{ESIZE} & \multicolumn{1}{c}{MSIZE} \\
+        45 & 3 & 16 \\
+    \end{tabular}
+    \end{center}
+    \caption{RISC-V Xvpfloat extension {\em ec} environment register format for arithmetic instructions.}
+    \label{fig:ec}
+\end{figure}
+
+Table~\ref{rm} lists the rounding mode supported by the Xvpfloat extension and their encoding.
+The Xvpfloat extension reuses the rounding modes defined in the RISC-V F standard extension.
+However it does not support the DYN mode as the dynamic nature of the rounding is fixed by the Xvpfloat instruction itself.
+
+\begin{table}[htbp]
+    \begin{small}
+    \begin{center}
+    \begin{tabular}{ccl}
+    \hline
+    \multicolumn{1}{|c|}{Rounding Mode} &
+    \multicolumn{1}{c|}{Mnemonic} &
+    \multicolumn{1}{c|}{Meaning} \\
+    \hline
+    \multicolumn{1}{|c|}{000} &
+    \multicolumn{1}{l|}{RNE} &
+    \multicolumn{1}{l|}{Round to Nearest, ties to Even}\\
+    \hline
+    \multicolumn{1}{|c|}{001} &
+    \multicolumn{1}{l|}{RTZ} &
+    \multicolumn{1}{l|}{Round towards Zero}\\
+    \hline
+    \multicolumn{1}{|c|}{010} &
+    \multicolumn{1}{l|}{RDN} &
+    \multicolumn{1}{l|}{Round Down (towards $-\infty$)}\\
+    \hline
+    \multicolumn{1}{|c|}{011} &
+    \multicolumn{1}{l|}{RUP} &
+    \multicolumn{1}{l|}{Round Up (towards $+\infty$)}\\
+    \hline
+    \multicolumn{1}{|c|}{100} &
+    \multicolumn{1}{l|}{RMM} &
+    \multicolumn{1}{l|}{Round to Nearest, ties to Max Magnitude}\\
+    \hline
+    \multicolumn{1}{|c|}{101} &
+    \multicolumn{1}{l|}{} &
+    \multicolumn{1}{l|}{\em Reserved for future use.}\\
+    \hline
+    \multicolumn{1}{|c|}{110} &
+    \multicolumn{1}{l|}{} &
+    \multicolumn{1}{l|}{\em Reserved for future use.}\\
+    \hline
+    \multicolumn{1}{|c|}{111} &
+    \multicolumn{1}{l|}{} &
+    \multicolumn{1}{l|}{\em Reserved for future use.}\\
+    \hline
+    \end{tabular}
+    \end{center}
+    \end{small}
+    \caption{Rounding mode (RM) encoding.}
+    \label{rm}
+\end{table}
+
+\section{Inf and NaN Generation and Propagation}
+
+There are two cases for the generation of $\pm$Inf and NaNs in the hardware:
+
+\begin{itemize}[topsep=0pt]
+    \item Reading an Inf or a NaN from memory (Section~\ref{sec:nanmem}).
+    \item Generating an Inf or a NaN from arithmetic operation (Section~\ref{sec:nangen}).
+\end{itemize}
+
+\subsection{ Reading a Inf or NaN value from memory}
+
+\label{sec:nanmem}
+
+Whenever an $\pm$Inf or a NaN is loaded from memory, it is stored into the target P register as specified hereafter:
+\begin{itemize}[topsep=0pt]
+    \item The Flags \texttt{Inf}, \texttt{sNaN} and \texttt{qNaN} are set in accordance with the value loaded from memory (\figurename~\ref{fig:vpr}).
+    \item Sign S is left unchanged.
+    \item The exponent is set to the same value encoded in the memory format, but in two's complement.
+    \item The significand (M) is set with the same value encoded in the memory format.
+\end{itemize}
+
+Once that an $\pm$Inf or a NaN is loaded from memory into a P register, it can be processed in two ways:
+\begin{itemize}[topsep=0pt]
+    \item It can be directly stored back in main memory, with the same value as the one loaded.
+    \item It can be processed by the arithmetic unit, applying the rules of the target arithmetic operator.
+\end{itemize}
+
+\subsection{NaN generation rule}
+
+\label{sec:nangen}
+
+NaN values are special and they do not obey to the same rules as others values.
+When a NaN stored in a P register is processed into an arithmetic operators, it is always propagated to the output.
+This means that if an arithmetic operation as a NaN in the operand, the result will be NaN, except for comparisons (see below).
+%Not all NaN values have the same priority: \texttt{sNaN} has higher priority than \texttt{qNaN}.
+An \texttt{sNaN} may be moved without modification, but any other arithmetic operation upon an \texttt{sNaN} shall produce a new quiet NaN (\texttt{qNaN}) and eventually generate a trap.
+In particular, this means that if an arithmetic operation gets a \texttt{sNaN} and a \texttt{qNaN} as inputs, the result will be \texttt{qNaN}.
+\texttt{sNaN}  generated using the ISA may result only from loading a \texttt{sNaN} from memory, or by setting the \texttt{sNaN} flag of a P register with a \texttt{PMV.X.P} operation (see Section~\ref{sec:isamov}).
+
+Comparisons involving NaNs obey to specific rules:
+\begin{itemize}[topsep=0pt]
+    \item Every NaN shall compare unordered with anything, which means it will return false to the other predicates (cf 5.11 Details of comparison predicates in the 2008 754 standard).
+        Specifically, NaN always compares not equal to NaN (\texttt{NaN != NaN}).
+    \item Any other operation involving a NaN value returns NaN.
+        In order to comply with the rule above, the hardware will propagate the actual mantissa of the NaN operand.
+        In case both operands are NaN it will return any of both. 
+\end{itemize}  
+
+As a general rule, other software-emulated operations may lead to NaN values:
+\begin{itemize}[topsep=0pt]
+    \item Division by Zero generates $+/- Inf$ except in the case when both operands are null ($\frac{0}{0}$).
+        In that case the operation shall return a signaling NaN (sNaN).
+        However, current implementation relies on software for calculating division.
+        Therefore, the software will create a sNaN value.
+    \item Invalid operations in arithmetic basic functions, such as $sqrt(-1)$, $log(-1)$, etc., will generate quiet NaNs (\texttt{qNaNs}).
+        However, current implementation relies on software for calculating these routines.
+        Therefore, the software will create a qNaN value.
+\end{itemize}
+
+\subsection{Inf generation rule}
+
+\label{sec:infgen}
+
+When Inf value are processed in arithmetic units, the final result can differ depending on the arithmetic operator.
+
+\subsubsection{Addition/Subtraction}
+
+During additions, an operation with an operand set to $\pm$Inf can behave differently depending the other operand value:
+\begin{itemize}[topsep=0pt]
+    \item If the other operand is a scalar value (not Inf or NaN), the result will be $\pm$Inf.
+    \item If the other operand is Inf, if the two operands have the same sign, the result will be $\pm$Inf. Otherwise \texttt{qNaN}.
+\end{itemize}
+
+\subsubsection{Multiplication}
+
+During multiplications, an operation with an operand set to $\pm$Inf can behave differently depending the other operand value:
+\begin{itemize}[topsep=0pt]
+    \item If the other operand is a scalar value different from zero, Inf, or NaN, the result will be $\pm$Inf.
+    \item If the other operand is zero, the result is \texttt{qNaN}.
+    \item If the other operand is Inf, the result will be $\pm$Inf, and the sign is positive if the input signs are equal, or negative if the input signs are different.
+\end{itemize}
+
+\subsubsection{Comparison}
+\label{sec:infcomp}
+
+Comparison with Inf obeys specific rules:
+\begin{itemize}[topsep=0pt]
+    \item Infinite operands of the same sign shall compare equal.
+    \item Other Arithmetic Operation involving Inf will create a quiet NaN value (qNaN).
+\end{itemize}
+
+\section{Overflow and Underflow}
+
+Underflow and overflow lead to zero and Inf values respectively, and they may appear in two cases:
+\begin{itemize}
+    \item During internal operations.
+    \item While storing to memory with lower precision than internal register value.
+\end{itemize}
+
+Overflow or underflow during load operation is not possible since the P register format precision is a superset of the memory format precision supported by a given Xvpfloat implementation.
+An exception to this rule is loading a subnormal value from memory with $ES = IEEE\_Esize_{MAX}$, where proper operation is not guaranteed.
+The Xvpfloat extension guarantees that stores never produce values that could not be read back and use proper rounding in this case.
+So this problem may only arise with externally produced data and care must be taken when processing such data with Xvpfloat extension.
+
+\subsection{Internal Registers Underflow}
+
+Arithmetic underflow can occur when the rounded result of a floating-point operation is smaller in magnitude (that is, closer to zero) than the smallest value representable in the P register.
+More specifically, an underflow can occur if the resulting exponent is smaller than the minimum one encodable in a P register, or if the result cannot be written in normal form within the P format (Section~\ref{sec:vpregs}).
+There are some rounding rules that prevent underflow (e.g., positive number with RUP, or negative number with RDN \figurename~\ref{rm}).
+
+The result of the underflowing operation will be a zero, and it is encoded by setting the \texttt{zero} flag in the target P register (\figurename~\ref{fig:vpr}).
+The sign is preserved, which means that the resulting zero will carry the sign of the result (i.e., negative if the signs of operands differ, positive otherwise).
+
+\subsection{Internal Registers Overflow}
+
+Overflow occurs when numbers exceed the maximum value that can be represented in the chosen numeric representation.
+It can be generated with arithmetic operations that for final normalized result have an exponent larger than the maximum one supported by the P register format.
+
+However, there are some rounding rules (\figurename~\ref{rm}) that prevent overflow under some conditions.
+More precisely, when the value to be rounded is larger than the maximum value supported by the P register format, there are some conditions that make the rounded value rounded to this maximum value, instead of being rounded to infinity.
+These conditions are:
+\begin{itemize}
+    \item If the number to be rounded is negative, and the rounding mode is round-up (RUP).
+    \item If the number to be rounded is positive, and the rounding mode is round-down (RDN).
+    \item If rounding mode is round-towards-zero (RTZ).
+\end{itemize}
+
+\subsection{Underflow during Store operations}
+
+This case is closely related with the support of subnormal format.
+Underflow during store operations can occur if the exponent value of the P register is lower than the minimum value supported by the memory format, or the subnormalization of the number with the minimum exponent value supported in memory leads to zero.
+More details on this subject are covered in Section~\ref{sec:subnormalFormatSupport}.
+
+\subsection{Overflow during Store operations}
+
+Overflow during STORE operations can occur when the value contained in internal registers overflows the memory format capacity.
+In this case the value is stored in memory as $Inf$ and carries the sign of the internal value.
+
+\section{Subnormal Format Support}
+
+\label{sec:subnormalFormatSupport}
+
+The internal operations only use normal format.
+However, this architecture has to support subnormal numbers in memory format, when it has to either load or store values in memory.
+
+\subsection{Loading of Subnormal Values from Memory}
+
+When reading subnormal values from memory, this architecture automatically converts them in normal form into its internal registers.
+The value can be always represented in the internal register format (i.e., as a {\em P}-number) without loss of precision up to an exponent size $ES < IEEE\_Esize_{MAX}$.
+Beyond this limit, subnormal numbers support for load operations may not be guaranteed.
+
+\subsection{Storing of Subnormal Values to Memory}
+
+If an internal value to be stored in memory is zero, this architecture stores a zero in memory, and propagates its sign.
+When the absolute value of the internal P number to be stored in memory is not zero and it is lower than $2^{-2^{(ES-1)}+2}$ (the smallest absolute value representable in memory using the IEEE-754-2008 format), this architecture converts the value in subnormal format.
+\begin{itemize}
+    \item If the internal value can be represented in subnormal format, it is stored in subnormal format after appropriate rounding. 
+    \item If the memory format has not enough mantissa bits for representing at least the most-significand-bit of the input value in subnormal form, the conversion results in a zero value.
+        This case occurs when $ |x| < 2^{2^{-(ES-1)}+2} \times 2^{-(BIS-ES)}$.
+\end{itemize}

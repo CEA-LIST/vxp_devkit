@@ -1,0 +1,136 @@
+\chapter{Xvpfloat implementations}
+
+\section{Rhea implementation}
+
+\subsection{Architecture parameters}
+
+\begin{figure}[ht]
+\begin{center}
+    \begin{tabular}{|l|c|p{4in}|}
+    \hline
+    C & 8 & Internal mantissa 64 bits chunks \\
+    \hline
+    ELEN & 18 & Internal exponent size (bits)\\
+    \hline
+    \end{tabular}
+\end{center}
+\caption{RISC-V Xvpfloat Rhea main parameters.}
+\label{fig:Xvpfloat_rhea_main_params}
+\end{figure}
+
+\begin{figure}[ht]
+\begin{center}
+    \begin{tabular}{|l|c|p{4in}|}
+    \hline
+    MLEN & 512 & Internal mantissa size (bits) \\
+    \hline
+    LLEN & 3 & Internal L field size (bits)\\
+    \hline
+    HLEN & 26 & {\em P} register header size (bits)\\
+    \hline
+    VPLEN & 538 & Total size of internal scalar {\em P} register (bits)\\
+    \hline
+    BIS\textsubscript{MAX} & 531 & Maximum size in memory (bits)\\
+    \hline
+    BYS\textsubscript{MAX} & 67 & Maximum size in memory (bytes)\\
+    \hline
+    \end{tabular}
+\end{center}
+\caption{RISC-V Xvpfloat Rhea derived parameters.}
+\label{fig:Xvpfloat_rhea_derived_params}
+\end{figure}
+
+\subsection{Memory formats support}
+
+Due to issues that may happen when reading subnormal value with $ES = IEEE\_Esize_{MAX}$ (see Section~\ref{sec:subnormalFormatSupport}), we report strict and partial compliance with IEEE-754 2008 standard.
+Partial compliance means that reading a subnormal number $ |x| < 2^{2^{-(ES-1)}}$ may produce incorrect results.
+Xvpfloat guarantees that such a number is properly rounded when stored in memory for correct results when reading it back.
+
+\begin{figure}[ht]
+\begin{center}
+    \begin{tabular}{|l|l|l|}
+    \hline
+                        & READ                    & WRITE \\
+    \hline
+                        & $2 \leq Msize \leq 512$ & $2 \leq Msize \leq 512$ \\
+    \cline{2-3}
+    Strict compliance   & $1 \leq Esize \leq 17$  & $1 \leq Esize \leq 18$  \\
+    \cline{2-3}
+                        & $1 \leq BYS \leq 66$    & $1 \leq BYS \leq 67$    \\
+    \hline
+                        & $2 \leq Msize \leq 512$ & $2 \leq Msize \leq 512$ \\
+    \cline{2-3}
+    Partial compliance  & $1 \leq Esize \leq 18$  & $1 \leq Esize \leq 18$  \\
+    \cline{2-3}
+                        & $1 \leq BYS \leq 67$    & $1 \leq BYS \leq 67$    \\
+    \hline
+    \end{tabular}
+\end{center}
+\caption{RISC-V Xvpfloat Rhea IEEE extendable support.}
+\label{fig:Xvpfloat_rhea_ieee_extendable}
+\end{figure}
+
+\begin{figure}[ht]
+\begin{center}
+    \begin{tabular}{|l|l|l|l|l|l|}
+    \hline
+    Bitsize (k) & ES & MS  & Interchange & Strict compliance & Partial compliance \\
+    \hline
+    16          & 3  & 12  & X           & X                 &                    \\
+    24          & 5  & 18  &             & X                 &                    \\
+    32          & 7  & 24  & X           & X                 &                    \\
+    40          & 8  & 31  &             & X                 &                    \\
+    48          & 9  & 38  &             & X                 &                    \\
+    56          & 10 & 45  &             & X                 &                    \\
+    64          & 11 & 52  & X           & X                 &                    \\
+    72          & 12 & 59  &             & X                 &                    \\
+    80          & 12 & 67  &             & X                 &                    \\
+    88          & 13 & 74  &             & X                 &                    \\
+    96          & 13 & 82  &             & X                 &                    \\
+    104         & 14 & 89  &             & X                 &                    \\
+    112         & 14 & 97  &             & X                 &                    \\
+    120         & 15 & 104 &             & X                 &                    \\
+    128         & 15 & 112 & X           & X                 &                    \\
+    136         & 15 & 120 &             & X                 &                    \\
+    144         & 16 & 127 &             & X                 &                    \\
+    152         & 16 & 135 &             & X                 &                    \\
+    160         & 16 & 143 & X           & X                 &                    \\
+    168         & 17 & 150 &             & X                 &                    \\
+    176         & 17 & 158 &             & X                 &                    \\
+    184         & 17 & 166 &             & X                 &                    \\
+    192         & 17 & 174 & X           & X                 &                    \\
+    200         & 18 & 181 &             &                   & X                  \\
+    208         & 18 & 189 &             &                   & X                  \\
+    216         & 18 & 197 &             &                   & X                  \\
+    224         & 18 & 205 & X           &                   & X                  \\
+    232         & 18 & 213 &             &                   & X                  \\
+    \hline
+    \end{tabular}
+\end{center}
+\caption{RISC-V Xvpfloat Rhea IEEE extended support.}
+\label{fig:Xvpfloat_rhea_ieee_extended}
+\end{figure}
+
+\subsection{Performance}
+
+\subsubsection{Forewords}
+
+Latencies presented here are measured in isolation with an empty pipeline.
+So, it does not account for back-pressure or arbitration conflicts when running other instructions in parallel.
+
+Bandwdith reported here is measured by sending the same instruction repeatedly with the same data and parameters.
+
+Instruction performance is both data-dependent and parameters-dependent.
+As a consequence, following sections will include both models and multi-dimensionnal measurements.
+
+\subsubsection{Addition/substraction performance}
+
+\subsubsection{Multiplication performance}
+
+\subsubsection{Conversion performance}
+
+\subsubsection{Load and store performance}
+
+\subsubsection{Move performance}
+
+\subsubsection{Comparison performance}

@@ -1,0 +1,39 @@
+\chapter{System Registers}
+
+\section{CSR MISA - Machine Instruction-Set-Architecture}
+
+Bit 23 ("X") of the CSR MISA allows to indicate that a non-standard extension is available. When the Xvpfloat extension is implemented by the core, this bit is set to '1'.
+
+\section{CSR Status - User-mode extension state tracking}
+
+CSR Status contains specific fields for tracking the current state of non-standard extensions. This 2-bits field is named 'XS'.
+
+As specified in the priviledged ISA document of RISC-V\cite{riscvptr}, "this field can be checked by a context switch routine to quickly determine whether a state save or restore is required". The possible values for this field are:
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+Status & XS Meaning \\
+\hline
+0 & Off \\
+\hline
+1 & Initial \\
+\hline
+2 & Clean \\
+\hline
+3 & Dirty \\
+\hline
+\end{tabular}
+\end{center}
+
+As a given RISC-V core can implement multiple non-standard extensions, this field reports the maximum status value across all user-extension status fields.
+
+On reset, the "XS" field is set to "Off". When "Off", the Xvpfloat extension is disabled, thus no Xvpfloat instruction can be executed (an illegal instruction exception is issued in this case). The privilege software is responsible of updating this state to another value (e.g. Initial or clean) to enable Xvpfloat instructions. This can be part of the initialization code in the firmware for example.
+
+The hardware updates the "XS" field to "dirty" each time an instruction modifies any state of the Xvpfloat extension. However, the privileged software is responsible of resetting this state to clean once the context is saved or restored.
+
+When the XS field is set to dirty, the "SD" read-only bit (most significant bit of the status CSR) is set to '1'.
+
+\section{TODO}
+
+TODO: report xvpfloat hardware support + version

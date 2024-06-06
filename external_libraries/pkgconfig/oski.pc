@@ -1,0 +1,13 @@
+prefix=@@@INSTALL_PREFIX@@@
+exec_prefix="${prefix}"
+libdir="${prefix}/lib/oski"
+includedir="${prefix}/include"
+
+Name: oski
+Description: 
+URL: 
+Version: 
+Requires: 
+Requires.private: 
+Cflags: -I"${includedir}"
+Libs: -L"${libdir}" -loski -loskilt -loski_Tid -loski_Tiz -loski_mat_CSR_Tid -loski_mat_CSR_Tiz -loski_mat_CSC_Tid -loski_mat_CSC_Tiz -loski_mat_BCSR_Tid -loski_mat_BCSR_Tiz -loski_mat_MBCSR_Tid -loski_mat_MBCSR_Tiz -loski_mat_GCSR_Tid -loski_mat_GCSR_Tiz -loski_mat_CB_Tid -loski_mat_CB_Tiz -loski_mat_VBR_Tid -loski_mat_VBR_Tiz -loski_mat_DENSE_Tid -loski_mat_DENSE_Tiz -loski_heur_regprof_Tid -loski_heur_symmrb_Tid -loski_heur_mregblock_Tid -loski_heur_regprof_Tiz -loski_heur_symmrb_Tiz -loski_heur_mregblock_Tiz

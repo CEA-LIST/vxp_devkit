@@ -1,0 +1,816 @@
+\chapter{Instruction Set}
+
+\section{Environment Handling Instructions}
+
+\label{sec:env_ins}
+
+\vspace{-0.2in}
+\begin{center}
+\begin{tabular}{@{}O@{}R@{}R@{}F@{}R@{}O@{}}
+\\
+\instbitrange{31}{25} &
+\instbitrange{24}{20} &
+\instbitrange{19}{15} &
+\instbitrange{14}{12} &
+\instbitrange{11}{7} &
+\instbitrange{6}{0} \\
+\hline
+\multicolumn{1}{|c|}{Xop7} &
+\multicolumn{1}{c|}{rs2} &
+\multicolumn{1}{c|}{rs1} &
+\multicolumn{1}{c|}{env} &
+\multicolumn{1}{c|}{rd} &
+\multicolumn{1}{c|}{{\em custom-0}} \\
+\hline
+7 & 5 & 5 & 3 & 5 & 7 \\
+PGER & 00000 & src & 000 & dest & {\em custom-0} \\
+PSER & 00000 & src & 000 & dest & {\em custom-0} \\
+\end{tabular}
+\end{center}
+
+PGER (Get Environment Register) gets {\em src} environment register and put it in {\em dest} 64 bits integer register.
+{\em src} encoding is specified in the {\em Numbering} column of Figure~\ref{fig:vpenvs}.
+
+PSER (Set Environment Register) sets {\em dest} environment register to value of {\em src} 64 bits integer register.
+{\em dest} encoding is specified in the {\em Numbering} column of Figure~\ref{fig:vpenvs}.
+
+\begin{center}
+\begin{tabular}{|l|l|t|}
+\hline
+Opcode & Mnemonic & Operation \\
+\hline
+PGER   & PGER rt, ea & rt = ea \\
+\hline
+PSER   & PSER et, ra & et = ra \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Load and Store Instructions}
+
+\label{sec:ls_ins}
+
+\subsection{Preamble}
+
+Memory is byte addressable and all addresses manipulated hereafter refer to bytes.
+The following instructions do not enforce any further constraint on memory alignement.
+However, only 64 bits (or less) aligned memory accesses are guaranteed to proceed atomically.
+Other requests may generate multiple bus accesses and be visible as multiple requests from outside the processor.
+See Section~\ref{sec:mem_model} for additionnal details.
+
+Data exchanges through RV64I load/store and Xvpfloat loads/stores need explicit synchronization (memory fences).
+See Section~\ref{sec:mem_model} for additionnal details.
+
+Dedicated instructions are provided for half/float/double precision loads and stores.
+These instructions can be emulated using variable precision load/store instructions where environment is configured to use the same memory layout as standard 16/32/64 bits floating point numbers.
+Performance of these dedicated instructions with respect to variable precision load and store is \implementationdefined .
+However this specification recommends to use these dedicated instructions when format is statically defined at compile time and match half/float/double encoding.
+
+\subsection{Variable Precision Load Instruction}
+
+\vspace{-0.2in}
+\begin{center}
+\begin{tabular}{@{}Y@{}F@{}R@{}R@{}F@{}R@{}O@{}}
+\\
+\instbitrange{31}{28} &
+\instbitrange{27}{25} &
+\instbitrange{24}{20} &
+\instbitrange{19}{15} &
+\instbitrange{14}{12} &
+\instbitrange{11}{7} &
+\instbitrange{6}{0} \\
+\hline
+\multicolumn{1}{|c|}{Xop4} &
+\multicolumn{1}{c|}{imm[7:5]} &
+\multicolumn{1}{c|}{imm[4:0]} &
+\multicolumn{1}{c|}{rs1} &
+\multicolumn{1}{c|}{env} &
+\multicolumn{1}{c|}{rd} &
+\multicolumn{1}{c|}{{\em custom-0}} \\
+\hline
+4        & 3          & 5          & 5    & 3   & 5    & 7 \\
+LOAD-VPE & index[7:5] & index[4:0] & base & evp & dest & {\em custom-0} \\
+\end{tabular}
+\end{center}
+
+LOAD-VPE (Load VPfloat Extendable) loads a floating point value from memory using IEEE-754 2008 standard extendable format.
+Result is put in {\em dest} p register (see {\em Numbering} column of Figure \ref{fig:vprs}).
+
+Environment register {\em evp0..7} specified by the instruction provides:
+\begin{itemize}[topsep=0pt]
+    \item Exponent size ES.
+    \item Mantissa size MS, deduced from bitsize and exponent size: $MS = BIS-ES-1$. 
+    \item Floating point number bitsize BIS in memory, given in bits.
+    If bitsize is not a multiple of 8 bits, the mantissa is padded with 0s in least significant bits so that total size is aligned on byte boundaries.
+    So byte size BYS in memory is given by $BYS = ceil( \frac{BIS}{8} )$.
+    \item Stride of the indexing.
+\end{itemize}
+Address of the load is computed as $@ = base + evp_i[MBB] \times evp_i[STRIDE] \times index$.
+Base addresse is provided by integer register {\em base}.
+Index is a 2's complement signed immediate of the instruction whose value ranges from -128 to 127.
+
+\begin{center}
+    \begin{tabular}{|l|l|t|}
+    \hline
+    Opcode   & Mnemonic & Operation \\
+    \hline
+    LOAD-VPE & PLE pt, evpi, ra\{, \#index\} & \begin{tabular}{@{}t@{}}vpfloat<evpi> *tab = ra \\ pt = tab[index] \end{tabular}  \\
+    \hline
+    \end{tabular}
+\end{center}
+
+\subsection{Variable Precision Store Instruction}
+
+\vspace{-0.2in}
+\begin{center}
+\begin{tabular}{@{}Y@{}F@{}R@{}R@{}F@{}R@{}O@{}}
+\\
+\instbitrange{31}{28} &
+\instbitrange{27}{25} &
+\instbitrange{24}{20} &
+\instbitrange{19}{15} &
+\instbitrange{14}{12} &
+\instbitrange{11}{7} &
+\instbitrange{6}{0} \\
+\hline
+\multicolumn{1}{|c|}{Xop4} &
+\multicolumn{1}{c|}{imm[7:5]} &
+\multicolumn{1}{c|}{rs2} &
+\multicolumn{1}{c|}{rs1} &
+\multicolumn{1}{c|}{env} &
+\multicolumn{1}{c|}{imm[4:0]} &
+\multicolumn{1}{c|}{{\em custom-0}} \\
+\hline
+4         & 3          & 5   & 5    & 3   & 5          & 7              \\
+STORE-VPE & index[7:5] & src & base & evp & index[4:0] & {\em custom-0} \\
+\end{tabular}
+\end{center}
+
+STORE-VPE (Store VPfloat Extendable) stores a floating point value in memory using IEEE-754 2008 standard extendable format.
+Source is {\em src} p register (see {\em Numbering} column of Figure \ref{fig:vprs}).
+
+Environment register {\em evp0..7} specified by the instruction provides:
+\begin{itemize}[topsep=0pt]
+    \item Exponent size ES.
+    \item Mantissa size MS, deduced from bitsize and exponent size: $MS = BIS-ES-1$. 
+    \item Floating point number bitsize BIS in memory, given in bits.
+    If bitsize is not a multiple of 8 bits, the mantissa is padded with 0s in least significant bits so that total size is aligned on byte boundaries.
+    So byte size BYS in memory is given by $BYS = ceil( \frac{BIS}{8} )$.
+    \item Rounding mode RM used when {\em src} precision is higher than precision in memory.
+    \item Stride of the indexing.
+\end{itemize}
+Address of the store is computed as $@ = base + evp_i[MBB] \times evp_i[STRIDE] \times index$.
+Base addresse is provided by integer register {\em base}.
+Index is a 2's complement signed immediate of the instruction whose value ranges from -128 to 127.
+
+\begin{center}
+    \begin{tabular}{|l|l|t|}
+    \hline
+    Opcode   & Mnemonic & Operation \\
+    \hline
+    STORE-VPE & PSE pb, evpi, ra\{,\#index\} & \begin{tabular}{@{}t@{}}vpfloat<evpi> *tab = ra \\ tab[index] = pb \end{tabular}  \\
+    \hline
+    \end{tabular}
+\end{center}
+
+\subsection{16/32/64 Precision Load Instructions}
+
+\vspace{-0.2in}
+\begin{center}
+\begin{tabular}{@{}Y@{}F@{}R@{}R@{}F@{}R@{}O@{}}
+\\
+\instbitrange{31}{28} &
+\instbitrange{27}{25} &
+\instbitrange{24}{20} &
+\instbitrange{19}{15} &
+\instbitrange{14}{12} &
+\instbitrange{11}{7} &
+\instbitrange{6}{0} \\
+\hline
+\multicolumn{1}{|c|}{Xop4} &
+\multicolumn{1}{c|}{imm[7:5]} &
+\multicolumn{1}{c|}{imm[4:0]} &
+\multicolumn{1}{c|}{rs1} &
+\multicolumn{1}{c|}{env} &
+\multicolumn{1}{c|}{rd} &
+\multicolumn{1}{c|}{{\em custom-0}} \\
+\hline
+4        & 3          & 5          & 5   & 3   & 5    & 7              \\
+LOAD-VPH & index[7:5] & index[4:0] & src & efp & dest & {\em custom-0} \\
+LOAD-VPW & index[7:5] & index[4:0] & src & efp & dest & {\em custom-0} \\
+LOAD-VPD & index[7:5] & index[4:0] & src & efp & dest & {\em custom-0} \\
+\end{tabular}
+\end{center}
+
+Environment register {\em efp0..7} specified by the instruction provides:
+\begin{itemize}[topsep=0pt]
+    \item Stride of the indexing.
+\end{itemize}
+
+LOAD-VPH (Load VPfloat Half) loads a floating point value from memory using IEEE-754 2008 standard format for 16 bits floating point numbers.
+Result is put in {\em dest} p register (see {\em Numbering} column of Figure \ref{fig:vprs}).
+Address of the store is computed as $@ = base + 2 \times efp_i[STRIDE] \times index$.
+Base addresse is provided by integer register {\em base}.
+Index is a 2's complement signed immediate of the instruction whose value ranges from -128 to 127.
+
+LOAD-VPW (Load VPfloat Word) loads a floating point value from memory using IEEE-754 2008 standard format for 32 bits floating point numbers.
+Result is put in {\em dest} p register (see {\em Numbering} column of Figure \ref{fig:vprs}).
+Address of the store is computed as $@ = base + 4 \times efp_i[STRIDE] \times index$.
+Base addresse is provided by integer register {\em base}.
+Index is a 2's complement signed immediate of the instruction whose value ranges from -128 to 127.
+
+LOAD-VPD (Load VPfloat Double) loads a floating point value from memory using IEEE-754 2008 standard format for 64 bits floating point numbers.
+Result is put in {\em dest} p register (see {\em Numbering} column of Figure \ref{fig:vprs}).
+Address of the store is computed as $@ = base + 8 \times efp_i[STRIDE] \times index$.
+Base addresse is provided by integer register {\em base}.
+Index is a 2's complement signed immediate of the instruction whose value ranges from -128 to 127.
+
+\begin{center}
+    \begin{tabular}{|l|l|t|}
+    \hline
+    Opcode   & Mnemonic & Operation \\
+    \hline
+    LOAD-VPH & PLH pt, efpi, ra\{, \#index\} & \begin{tabular}{@{}t@{}}half<efpi> *tab = ra \\ pt = tab[index] \end{tabular}  \\
+    \hline
+    LOAD-VPW & PLW pt, efpi, ra\{, \#index\} & \begin{tabular}{@{}t@{}}float<efpi> *tab = ra \\ pt = tab[index] \end{tabular}  \\
+    \hline
+    LOAD-VPD & PLD pt, efpi, ra\{, \#index\} & \begin{tabular}{@{}t@{}}double<efpi> *tab = ra \\ pt = tab[index] \end{tabular}  \\
+    \hline
+    \end{tabular}
+\end{center}
+
+
+\subsection{16/32/64 Precision Store Instructions}
+
+\vspace{-0.2in}
+\begin{center}
+\begin{tabular}{@{}Y@{}F@{}R@{}R@{}F@{}R@{}O@{}}
+\\
+\instbitrange{31}{28} &
+\instbitrange{27}{25} &
+\instbitrange{24}{20} &
+\instbitrange{19}{15} &
+\instbitrange{14}{12} &
+\instbitrange{11}{7} &
+\instbitrange{6}{0} \\
+\hline
+\multicolumn{1}{|c|}{Xop4} &
+\multicolumn{1}{c|}{imm[7:5]} &
+\multicolumn{1}{c|}{rs2} &
+\multicolumn{1}{c|}{rs1} &
+\multicolumn{1}{c|}{env} &
+\multicolumn{1}{c|}{imm[4:0]} &
+\multicolumn{1}{c|}{{\em custom-0}} \\
+\hline
+4         & 3          & 5   & 5    & 3   & 5          & 7              \\
+STORE-VPH & index[7:5] & src & base & efp & index[4:0] & {\em custom-0} \\
+STORE-VPW & index[7:5] & src & base & efp & index[4:0] & {\em custom-0} \\
+STORE-VPD & index[7:5] & src & base & efp & index[4:0] & {\em custom-0} \\
+\end{tabular}
+\end{center}
+
+Environment register {\em efp0..7} specified by the instruction provides:
+\begin{itemize}[topsep=0pt]
+    \item Rounding mode RM used when {\em src} precision is higher than precision in memory.
+    \item Stride of the indexing.
+\end{itemize}
+
+STORE-VPH (Store VPfloat Half) stores a floating point value in memory using IEEE-754 2008 standard format for 16 bits floating point numbers.
+Source is {\em src P} register (see {\em Numbering} column of Figure \ref{fig:vprs}).
+Address of the store is computed as $@ = base + 2 \times efp_i[STRIDE] \times index$.
+Base addresse is provided by integer register {\em base}.
+Index is a 2's complement signed immediate of the instruction whose value ranges from -128 to 127.
+
+STORE-VPW (Store VPfloat Word) stores a floating point value in memory using IEEE-754 2008 standard format for 32 bits floating point numbers.
+Source is {\em src P} register (see {\em Numbering} column of Figure \ref{fig:vprs}).
+Address of the store is computed as $@ = base + 4 \times efp_i[STRIDE] \times index$.
+Base addresse is provided by integer register {\em base}.
+Index is a 2's complement signed immediate of the instruction whose value ranges from -128 to 127.
+
+STORE-VPD (Store VPfloat Double) stores a floating point value in memory using IEEE-754 2008 standard format for 64 bits floating point numbers.
+Source is {\em src P} register (see {\em Numbering} column of Figure \ref{fig:vprs}).
+Address of the store is computed as $@ = base + 8 \times efp_i[STRIDE] \times index$.
+Base addresse is provided by integer register {\em base}.
+Index is a 2's complement signed immediate of the instruction whose value ranges from -128 to 127.
+
+\begin{center}
+    \begin{tabular}{|l|l|t|}
+    \hline
+    Opcode   & Mnemonic & Operation \\
+    \hline
+    STORE-VPH & PSH pb, efpi, ra\{,\#index\} & \begin{tabular}{@{}t@{}}half<efpi> *tab = ra \\ tab[index] = pb \end{tabular}  \\
+    \hline    
+    STORE-VPW & PSW pb, efpi, ra\{,\#index\} & \begin{tabular}{@{}t@{}}float<efpi> *tab = ra \\ tab[index] = pb \end{tabular}  \\
+    \hline
+    STORE-VPD & PSD pb, efpi, ra\{,\#index\} & \begin{tabular}{@{}t@{}}double<efpi> *tab = ra \\ tab[index] = pb \end{tabular}  \\
+    \hline
+    \end{tabular}
+\end{center}
+
+\section{Move and Conversion Instructions}
+
+The Xvploat extension provides instructions to move data between the {\em X} registers of the integer register bank and the {\em P} registers of the variable precision floating point register bank.
+An instruction is also provided to move values between {\em P} registers.
+
+\subsection{Bit Pattern Move Instructions}
+
+\label{sec:isamov}
+
+A first set of instructions provides a mean to exchange raw values between {\em X} and {\em P} registers and between {\em P} registers. 
+As {\em P} registers are much bigger than 64 bits, a transfer between {\em X} and {\em P} registers is limited to a 64 bits chunk of data specified by the instruction.
+
+\subsubsection{Full P register move}
+
+\vspace{-0.2in}
+\begin{center}
+\begin{tabular}{@{}O@{}R@{}R@{}F@{}R@{}O@{}}
+\\
+\instbitrange{31}{25} &
+\instbitrange{24}{20} &
+\instbitrange{19}{15} &
+\instbitrange{14}{12} &
+\instbitrange{11}{7} &
+\instbitrange{6}{0} \\
+\hline
+\multicolumn{1}{|c|}{Xop7} &
+\multicolumn{1}{c|}{rs2} &
+\multicolumn{1}{c|}{rs1} &
+\multicolumn{1}{c|}{env} &
+\multicolumn{1}{c|}{rd} &
+\multicolumn{1}{c|}{{\em custom-0}} \\
+\hline
+7       & 5     & 5   & 3   & 5    & 7              \\
+PMV.P.P & 00000 & src & 000 & dest & {\em custom-0} \\
+\end{tabular}
+\end{center}
+
+PMV.P.P move {\em src P} register to {\em dest P} register.
+No operation is performed on the value being copied.
+
+\begin{center}
+    \begin{tabular}{|l|l|t|}
+    \hline
+    Opcodes   & Mnemonic & Operation \\
+    \hline
+    PMV.P.P   & PMV.P.P pt, pa & pt = pa \\
+    \hline
+    \end{tabular}
+\end{center}
+
+\subsubsection{Move P register to integer register}
+
+\vspace{-0.2in}
+\begin{center}
+\begin{tabular}{@{}O@{}R@{}R@{}F@{}R@{}O@{}}
+\\
+\instbitrange{31}{25} &
+\instbitrange{24}{20} &
+\instbitrange{19}{15} &
+\instbitrange{14}{12} &
+\instbitrange{11}{7} &
+\instbitrange{6}{0} \\
+\hline
+\multicolumn{1}{|c|}{Xop7} &
+\multicolumn{1}{c|}{rs2} &
+\multicolumn{1}{c|}{rs1} &
+\multicolumn{1}{c|}{type} &
+\multicolumn{1}{c|}{rd} &
+\multicolumn{1}{c|}{{\em custom-0}} \\
+\hline
+7       & 5     & 5   & 3        & 5    & 7              \\
+PMV.P.X & chunk & src & MV-CHUNK & dest & {\em custom-0} \\
+PMV.P.X & 00000 & src & MV-SIGN  & dest & {\em custom-0} \\
+PMV.P.X & mask  & src & MV-SUM   & dest & {\em custom-0} \\
+PMV.P.X & 00000 & src & MV-LEN   & dest & {\em custom-0} \\
+PMV.P.X & 00000 & src & MV-EXP   & dest & {\em custom-0} \\
+\end{tabular}
+\end{center}
+
+PMV.P.X moves {\em src P} register fields to {\em dest X} 64 bits integer register.
+Variants of this intruction are:
+\begin{itemize}[topsep=0pt]
+    \item MV-CHUNK: Move a 64 bits chunk of the {\em src P} register.
+    Chunk number is provided in the {\em chunk} 5-bit immediate.
+    Chunk encoding is as follows:
+        \begin{itemize}[noitemsep,topsep=0pt]
+            \item 0: most significant mantissa chunk {\em mchunk\textsubscript{0}} of {\em src P} register.
+            \item $C-1$: least significant mantissa chunk {\em mchunk\textsubscript{$C-1$}} of {\em src P} register.
+            \item 31: header of {\em src P} register.
+        \end{itemize}
+        Note : In the current implementation, $C=8$. Therefore, addressing a
+        chunk that is not implemented is not implementation defined and thus the
+        result is unexpected.
+    \item MV-SIGN: Move the sign of the {\em src P} register.
+    The sign bit is extended to 64 bits so that it can be manipulated as a signed 64 bits integer.
+    \item MV-SUM: Move the summary bits of the {\em src P} register and mask them with the {\em mask} 5-bit immediate.
+    Only 4 least significant bits of this immediate are used to update the 4 used bits of the summary field (see Figure~\ref{fig:vpr}).
+    Thus mask.b[4] should be set to 0.
+    The four least significant bits {\em dest X} are mapped as follows: bit 0 corresponds to the flag zero, the bit 1 corresponds to the flag inf, the bit 2 corresponds to the flag qNaN, the bit 3 corresponds to the flag sNaN.
+    \item MV-LEN: Move the L field of the {\em src P} register.
+    \item MV-EXP: Move the 2's complement exponent field of the {\em src P} register.
+    The exponent is sign-extended to 64 bits so that is can be manipulated as a signed 64 bits integer.
+\end{itemize}
+
+\begin{center}
+    \begin{tabular}{|l|l|t|}
+    \hline
+    Opcodes   & Mnemonic & Operation \\
+    \hline
+    PMV.P.X,MV-CHUNK & PMV.P.X rt, pa, \#chunk & rt = pa[chunk]            \\
+    \hline
+    PMV.P.X,MV-SIGN  & PMV.PSGN.X rt, pa       & rt = pa[sign]             \\
+    \hline
+    PMV.P.X,MV-SUM   & PMV.PSUM.X rt, pa, mask & rt = pa[summary] \& mask  \\
+    \hline
+    PMV.P.X,MV-LEN   & PMV.PLEN.X rt, pa       & rt = pa[len]              \\
+    \hline
+    PMV.P.X,MV-EXP   & PMV.PEXP.X rt, pa       & rt = pa[exponent]         \\
+    \hline
+    \end{tabular}
+\end{center}
+
+\subsubsection{Move integer register to P register}
+
+\vspace{-0.2in}
+\begin{center}
+\begin{tabular}{@{}O@{}R@{}R@{}F@{}R@{}O@{}}
+\\
+\instbitrange{31}{25} &
+\instbitrange{24}{20} &
+\instbitrange{19}{15} &
+\instbitrange{14}{12} &
+\instbitrange{11}{7} &
+\instbitrange{6}{0} \\
+\hline
+\multicolumn{1}{|c|}{Xop7} &
+\multicolumn{1}{c|}{rs2} &
+\multicolumn{1}{c|}{rs1} &
+\multicolumn{1}{c|}{type} &
+\multicolumn{1}{c|}{rd} &
+\multicolumn{1}{c|}{{\em custom-0}} \\
+\hline
+7       & 5     & 5   & 3        & 5    & 7              \\
+PMV.X.P & chunk & src & MV-CHUNK & dest & {\em custom-0} \\
+PMV.X.P & 00000 & src & MV-SIGN  & dest & {\em custom-0} \\
+PMV.X.P & 00000 & src & MV-SUM   & dest & {\em custom-0} \\
+PMV.X.P & 00000 & src & MV-LEN   & dest & {\em custom-0} \\
+PMV.X.P & 00000 & src & MV-EXP   & dest & {\em custom-0} \\
+\end{tabular}
+\end{center}
+
+PMV.X.P moves {\em src X} integer register to fields of {\em dest P} register.
+Variants of this intruction are:
+\begin{itemize}[topsep=0pt]
+    \item MV-CHUNK: Move a 64 bits chunk to the {\em dest P} register.
+    Chunk number is provided in the {\em chunk} 5-bit immediate.
+    Chunk encoding is as follows:
+        \begin{itemize}[noitemsep,topsep=0pt]
+            \item 0: most significant mantissa chunk {\em mchunk\textsubscript{0}} of {\em dest P} register.
+            \item $C-1$: least significant mantissa chunk {\em mchunk\textsubscript{$C-1$}} of {\em dest P} register.
+            \item 31: header of {\em dest P} register.
+        \end{itemize}
+        Note : In the current implementation, $C=8$. Therefore, addressing a
+        chunk that is not implemented is not implementation defined and thus the
+        result is unexpected.
+    \item MV-SIGN: Move bit 0 of {\em src X} to the sign of the {\em src P} register.
+    \item MV-SUM: Move the 4 least significant bits of {\em src X} to the summary bits of the {\em dest P} register.
+    The bits of {\em src X} are mapped as follows: bit 0 sets the flag zero, bit 1 sets the flag inf, bit 2 sets the flag qNaN, bit 3 sets the flag sNaN.
+    \item MV-LEN: Move the LLEN least significant bits of {\em src X} to the L field of the {\em dest P} register.
+    \item MV-EXP: Move the ELEN least significant bits of {\em src X} to the exponent field of the {\em dest P} register.
+\end{itemize}
+
+\begin{center}
+    \begin{tabular}{|l|l|t|}
+    \hline
+    Opcodes   & Mnemonic & Operation \\
+    \hline
+    PMV.X.P,MV-CHUNK & PMV.X.P pt, ra, \#chunk & pt[chunk]    = ra \\
+    \hline
+    PMV.X.P,MV-SIGN  & PMV.X.PSGN pt, ra       & pt[sign]     = ra \\
+    \hline
+    PMV.X.P,MV-SUM   & PMV.X.PSUM pt, ra       & pt[summary]  = ra \\
+    \hline
+    PMV.X.P,MV-LEN   & PMV.X.PLEN pt, ra       & pt[len]      = ra \\
+    \hline
+    PMV.X.P,MV-EXP   & PMV.X.PEXP pt, ra       & pt[exponent] = ra \\
+    \hline
+    \end{tabular}
+\end{center}
+
+\subsection{Move and Conversion Instructions}
+
+A second set of instructions provides a mean to exchange floating point values between {\em X} and {\em P} registers.
+These instructions use the IEEE-754 2008 format for floating point number in {\em X} registers.
+No rounding is done when moving floating point values from {\em X} to {\em P} registers as precision is preserved.
+However, when moving floating point values from {\em P} to {\em X} registers, rounding may happen and the rounding mode is provided by the specified environment register in the instruction.
+
+\vspace{-0.2in}
+\begin{center}
+\begin{tabular}{@{}O@{}R@{}R@{}F@{}R@{}O@{}}
+\\
+\instbitrange{31}{25} &
+\instbitrange{24}{20} &
+\instbitrange{19}{15} &
+\instbitrange{14}{12} &
+\instbitrange{11}{7} &
+\instbitrange{6}{0} \\
+\hline
+\multicolumn{1}{|c|}{Xop7} &
+\multicolumn{1}{c|}{rs2} &
+\multicolumn{1}{c|}{rs1} &
+\multicolumn{1}{c|}{env} &
+\multicolumn{1}{c|}{rd} &
+\multicolumn{1}{c|}{{\em custom-0}} \\
+\hline
+7        & 5   & 5     & 3  & 5    & 7              \\
+PCVT.P.H & src & 00000 & efp & dest & {\em custom-0} \\
+PCVT.P.F & src & 00000 & efp & dest & {\em custom-0} \\
+PCVT.P.D & src & 00000 & efp & dest & {\em custom-0} \\
+\end{tabular}
+\end{center}
+
+\begin{center}
+    \begin{tabular}{|l|l|t|}
+    \hline
+    Opcode   & Mnemonic & Operation \\
+    \hline
+    PCVT.P.H & PCVT.P.H rt, pa, efpi &  rt = (float16\_t) pa \\
+    \hline
+    PCVT.P.F & PCVT.P.F rt, pa, efpi &  rt = (float32\_t) pa \\
+    \hline
+    PCVT.P.D & PCVT.P.D rt, pa, efpi &  rt = (float64\_t) pa \\
+    \hline
+    \end{tabular}
+\end{center}
+
+PCVT.P.H moves {\em src P} register to {\em dest X} 64 bits integer register and converts it to IEEE-754 2008 16 bits floating point binary representation.
+The 48 most significant bits of {\em dest} are set to 0.
+
+PCVT.P.F moves {\em src P} register to {\em dest X} 64 bits integer register and converts it to IEEE-754 2008 32 bits floating point binary representation.
+The 32 most significant bits of {\em dest} are set to 0.
+
+PCVT.P.D moves {\em src P} register to {\em dest X} 64 bits integer register and converts it to IEEE-754 2008 64 bits floating point binary representation.
+
+Environment register {\em efp0..7} specified by the instruction provides the rounding mode (RM) used when {\em src} precision is higher than the destination precision.
+
+\vspace{-0.2in}
+\begin{center}
+\begin{tabular}{@{}O@{}R@{}R@{}F@{}R@{}O@{}}
+\\
+\instbitrange{31}{25} &
+\instbitrange{24}{20} &
+\instbitrange{19}{15} &
+\instbitrange{14}{12} &
+\instbitrange{11}{7} &
+\instbitrange{6}{0} \\
+\hline
+\multicolumn{1}{|c|}{Xop7} &
+\multicolumn{1}{c|}{rs2} &
+\multicolumn{1}{c|}{rs1} &
+\multicolumn{1}{c|}{000} &
+\multicolumn{1}{c|}{rd} &
+\multicolumn{1}{c|}{{\em custom-0}} \\
+\hline
+7        & 5     & 5   & 3   & 5 & 7 \\
+PCVT.H.P & 00000 & src & 000 & dest & {\em custom-0} \\
+PCVT.F.P & 00000 & src & 000 & dest & {\em custom-0} \\
+PCVT.D.P & 00000 & src & 000 & dest & {\em custom-0} \\
+\end{tabular}
+\end{center}
+
+PCVT.H.P moves {\em src X} 64 bits integer register containing a IEEE-754 2008 16 bits floating point number to {\em dest P} register and converts it to the variable precision floating point representation.
+
+PCVT.F.P moves {\em src X} 64 bits integer register containing a IEEE-754 2008 32 bits floating point number to {\em dest P} register and converts it to the variable precision floating point representation.
+
+PCVT.D.P moves {\em src X} 64 bits integer register containing a IEEE-754 2008 64 bits floating point number to {\em dest P} register and converts it to the variable precision floating point representation.
+
+\begin{center}
+    \begin{tabular}{|l|l|t|}
+    \hline
+    Opcode   & Mnemonic & Operation \\
+    \hline
+    PCVT.H.P & PCVT.H.P pt, ra & pt = (float16\_t) ra.H[0] \\
+    \hline
+    PCVT.F.P & PCVT.F.P pt, ra & pt = (float32\_t) ra.W[0] \\
+    \hline
+    PCVT.D.P & PCVT.D.P pt, ra & pt = (float64\_t) ra \\
+    \hline
+    \end{tabular}
+\end{center}
+
+\section{Arithmetic Instructions}
+
+\label{sec:arith_ins}
+
+\vspace{-0.2in}
+\begin{center}
+\begin{tabular}{@{}O@{}R@{}R@{}F@{}R@{}O@{}}
+\\
+\instbitrange{31}{25} &
+\instbitrange{24}{20} &
+\instbitrange{19}{15} &
+\instbitrange{14}{12} &
+\instbitrange{11}{7} &
+\instbitrange{6}{0} \\
+\hline
+\multicolumn{1}{|c|}{Xop7} &
+\multicolumn{1}{c|}{rs2} &
+\multicolumn{1}{c|}{rs1} &
+\multicolumn{1}{c|}{env} &
+\multicolumn{1}{c|}{rd} &
+\multicolumn{1}{c|}{{\em custom-0}} \\
+\hline
+7    & 5     & 5    & 3  & 5    & 7              \\
+PADD & src2  & src1 & ec & dest & {\em custom-0} \\
+PSUB & src2  & src1 & ec & dest & {\em custom-0} \\
+PRND & 00000 & src1 & ec & dest & {\em custom-0} \\
+PMUL & src2  & src1 & ec & dest & {\em custom-0} \\
+\end{tabular}
+\end{center}
+
+Arithmetic instructions take a compute environment as a parameter to the instruction.
+Environment register {\em ec0..7} specified by the instruction provides:
+\begin{itemize}[topsep=0pt]
+    \item Rounding mode RM used when precision of the result is higher than working precision configured in the environment.
+    \item The working precision WP which defines the bit-accurate mantissa precision of the computation result.
+\end{itemize}
+
+PADD adds {\em src1} with {\em src2 P} registers and put the result in {\em dest P} register.
+
+PSUB substracts {\em src2 P} register from {\em src1 P} register and put the result in {\em dest P} register.
+
+PRND moves  {\em src1 P} register to {\em dest P} register. 
+Contrary to PMV.P.P instruction, PRND takes into account the compute environment {\em ec} to round the result to chosen {\em wp} working precision. 
+
+PMUL multiply {\em src1} with {\em src2 P} registers and put the result in {\em dest P} register.
+
+\begin{center}
+    \begin{tabular}{|l|l|t|}
+    \hline
+    Opcode  & Mnemonic & Operation \\
+    \hline
+    PADD    & PADD pt, pa, pb, eci &  pt = pa+pb  \\
+    \hline
+    PSUB    & PSUB pt, pa, pb, eci &  pt = pa-pb  \\
+    \hline
+    PRND    & PRND pt, pa, eci    &  pt = pa+0.0 \\
+    \hline
+    PMUL    & PMUL pt, pa, pb, eci &  pt = pa*pb  \\
+    \hline
+    \end{tabular}
+\end{center}
+
+\section{Comparison Instructions}
+% attention, ceci peut etre sujet a discussion
+  These operations compare two operands \emph{src1} and \emph{src2}: Both \emph{src1} and \emph{src2} are considered to their full own precision, which may differ. Practically, the comparison is actually performed considering the maximum precision of both, while virtually padding the less precise operand with zeros.
+
+All comparison instructions defined below where one or both operands is NaN returns \emph{false} except \texttt{CMP-NEQ} which returns \emph{true}.
+
+\vspace{-0.2in}
+\begin{center}
+\begin{tabular}{@{}O@{}R@{}R@{}F@{}R@{}O@{}}
+\\
+\instbitrange{31}{25} &
+\instbitrange{24}{20} &
+\instbitrange{19}{15} &
+\instbitrange{14}{12} &
+\instbitrange{11}{7} &
+\instbitrange{6}{0} \\
+\hline
+\multicolumn{1}{|c|}{Xop7} &
+\multicolumn{1}{c|}{rs2} &
+\multicolumn{1}{c|}{rs1} &
+\multicolumn{1}{c|}{type} &
+\multicolumn{1}{c|}{rd} &
+\multicolumn{1}{c|}{{\em custom-0}} \\
+\hline
+7    & 5    & 5    & 3       & 5    & 7              \\
+PCMP & src2 & src1 & CMP-ALL & dest & {\em custom-0} \\
+PCMP & src2 & src1 & CMP-EQ  & dest & {\em custom-0} \\
+PCMP & src2 & src1 & CMP-NEQ & dest & {\em custom-0} \\
+PCMP & src2 & src1 & CMP-GT  & dest & {\em custom-0} \\
+PCMP & src2 & src1 & CMP-LT  & dest & {\em custom-0} \\
+PCMP & src2 & src1 & CMP-GEQ & dest & {\em custom-0} \\
+PCMP & src2 & src1 & CMP-LEQ & dest & {\em custom-0} \\
+\end{tabular}
+\end{center}
+
+PCMP instruction compares {\em src1} with {\em src2 P} registers and put the resulting flags in {\em dest X} integer register.
+Variants of this intruction are:
+\begin{itemize}[topsep=0pt]
+    \item CMP-ALL: Put all flags in {\em dest X} register.
+    These flags are:
+        \begin{itemize}[noitemsep,topsep=0pt]
+            \item 0: {\em src1} greater than {\em src2}
+            \item 1: {\em src1} lower than {\em src2}
+            \item 2: {\em src1} equal to {\em src2}
+            \item 3: {\em src1} not equal to {\em src2}
+            \item 4: one or both input operands is NaN (signaling or quiet)
+            \item [63:5]: \implementationdefined~value, software should not rely on value of these bits
+        \end{itemize}
+    \item CMP-EQ: set {\em dest} to 1 if {\em src1} is equal to {\em src2} else 0.
+    \item CMP-NEQ: set {\em dest} to 1 if {\em src1} is not equal to {\em src2} else 0.
+    \item CMP-GT: set {\em dest} to 1 if {\em src1} is greater than {\em src2} else 0.
+    \item CMP-LT: set {\em dest} to 1 if {\em src1} is lower than {\em src2} else 0.
+    \item CMP-GEQ: set {\em dest} to 1 if {\em src1} is greater than or equal to {\em src2} else 0.
+    \item CMP-LEQ: set {\em dest} to 1 if {\em src1} is lower than or equal to {\em src2} else 0.
+\end{itemize}
+
+\begin{center}
+    \begin{tabular}{|l|l|t|}
+    \hline
+    Opcodes & Mnemonic & Operation \\
+    \hline
+    PCMP,CMP-ALL & PCMP rt, pa, pb &  \begin{tabular}{@{}t@{}}
+                                        rt.b[0] = pa >  pb ?\@ 1 :\@ 0 \\
+                                        rt.b[1] = pa <  pb ?\@ 1 :\@ 0 \\
+                                        rt.b[2] = pa == pb ?\@ 1 :\@ 0 \\
+                                        rt.b[3] = pa != pb ?\@ 1 :\@ 0 \\
+                                        rt.b[4] = cmp.isNaN
+                                      \end{tabular} \\
+    \hline
+    PCMP,CMP-EQ  & PCMP.EQ  rt, pa, pb &  rt = pa == pb ?\@ 1 :\@ 0 \\
+    \hline
+    PCMP,CMP-NEQ & PCMP.NEQ rt, pa, pb &  rt = pa != pb ?\@ 1 :\@ 0 \\
+    \hline
+    PCMP,CMP-GT  & PCMP.GT  rt, pa, pb &  rt = pa >  pb ?\@ 1 :\@ 0 \\
+    \hline
+    PCMP,CMP-LT  & PCMP.LT  rt, pa, pb &  rt = pa <  pb ?\@ 1 :\@ 0 \\
+    \hline
+    PCMP,CMP-GEC & PCMP.GEC rt, pa, pb &  rt = pa >= pb ?\@ 1 :\@ 0 \\
+    \hline
+    PCMP,CMP-LEQ & PCMP.LEQ rt, pa, pb &  rt = pa <= pb ?\@ 1 :\@ 0 \\
+    \hline
+    \end{tabular}
+\end{center}
+
+\section{Opcode encoding}
+
+\begin{figure}[htbp]
+\begin{center}
+\begin{tabular}{@{}O@{}Y@{}F@{}}
+\\
+                                & \instbitrange{6}{3}      & \instbitrange{2}{0}       \\ \hline
+\multicolumn{1}{|c|}{PGER}      & \multicolumn{2}{c|}{0000000}                         \\ \hline
+\multicolumn{1}{|c|}{PSER}      & \multicolumn{2}{c|}{0000001}                         \\ \hline
+\multicolumn{1}{|c|}{PMV.P.P}   & \multicolumn{2}{c|}{0001000}                         \\ \hline
+\multicolumn{1}{|c|}{PMV.P.X}   & \multicolumn{2}{c|}{0001001}                         \\ \hline
+\multicolumn{1}{|c|}{PMV.X.P}   & \multicolumn{2}{c|}{0001010}                         \\ \hline
+\multicolumn{1}{|c|}{PCVT.P.H}  & \multicolumn{2}{c|}{0010000}                         \\ \hline
+\multicolumn{1}{|c|}{PCVT.P.F}  & \multicolumn{2}{c|}{0010001}                         \\ \hline
+\multicolumn{1}{|c|}{PCVT.P.D}  & \multicolumn{2}{c|}{0010010}                         \\ \hline
+\multicolumn{1}{|c|}{PCVT.H.P}  & \multicolumn{2}{c|}{0010100}                         \\ \hline
+\multicolumn{1}{|c|}{PCVT.F.P}  & \multicolumn{2}{c|}{0010101}                         \\ \hline
+\multicolumn{1}{|c|}{PCVT.D.P}  & \multicolumn{2}{c|}{0010110}                         \\ \hline
+\multicolumn{1}{|c|}{PADD}      & \multicolumn{2}{c|}{0011000}                         \\ \hline
+\multicolumn{1}{|c|}{PRND}      & \multicolumn{2}{c|}{0011001}                         \\ \hline
+\multicolumn{1}{|c|}{PSUB}      & \multicolumn{2}{c|}{0011010}                         \\ \hline
+\multicolumn{1}{|c|}{PMUL}      & \multicolumn{2}{c|}{0100000}                         \\ \hline
+\multicolumn{1}{|c|}{PCMP}      & \multicolumn{2}{c|}{0101000}                         \\ \hline
+\multicolumn{1}{|c|}{LOAD-VPH } & \multicolumn{1}{c|}{1000} & \multicolumn{1}{c|}{---} \\ \hline
+\multicolumn{1}{|c|}{LOAD-VPW } & \multicolumn{1}{c|}{1001} & \multicolumn{1}{c|}{---} \\ \hline
+\multicolumn{1}{|c|}{LOAD-VPD } & \multicolumn{1}{c|}{1010} & \multicolumn{1}{c|}{---} \\ \hline
+\multicolumn{1}{|c|}{LOAD-VPE } & \multicolumn{1}{c|}{1011} & \multicolumn{1}{c|}{---} \\ \hline
+\multicolumn{1}{|c|}{STORE-VPH} & \multicolumn{1}{c|}{1100} & \multicolumn{1}{c|}{---} \\ \hline
+\multicolumn{1}{|c|}{STORE-VPW} & \multicolumn{1}{c|}{1101} & \multicolumn{1}{c|}{---} \\ \hline
+\multicolumn{1}{|c|}{STORE-VPD} & \multicolumn{1}{c|}{1110} & \multicolumn{1}{c|}{---} \\ \hline
+\multicolumn{1}{|c|}{STORE-VPE} & \multicolumn{1}{c|}{1111} & \multicolumn{1}{c|}{---} \\ \hline
+\end{tabular}
+\end{center}
+\caption{RISC-V Xvpfloat extension opcode encoding ({\em funct7}).}
+\label{fig:opcodes}
+\end{figure}
+
+\begin{figure}[htbp]
+    \begin{center}
+    \begin{tabular}{@{}O@{}F@{}}
+    \\
+                                  & \instbitrange{2}{0}      \\ \hline
+    \multicolumn{1}{|c|}{CMP-ALL} & \multicolumn{1}{c|}{111} \\ \hline
+    \multicolumn{1}{|c|}{CMP-EQ}  & \multicolumn{1}{c|}{000} \\ \hline
+    \multicolumn{1}{|c|}{CMP-NEQ} & \multicolumn{1}{c|}{001} \\ \hline
+    \multicolumn{1}{|c|}{CMP-GT}  & \multicolumn{1}{c|}{011} \\ \hline
+    \multicolumn{1}{|c|}{CMP-LT}  & \multicolumn{1}{c|}{101} \\ \hline
+    \multicolumn{1}{|c|}{CMP-GEQ} & \multicolumn{1}{c|}{010} \\ \hline
+    \multicolumn{1}{|c|}{CMP-LEQ} & \multicolumn{1}{c|}{100} \\ \hline
+    \end{tabular}
+    \end{center}
+    \caption{RISC-V Xvpfloat extension CMP opcode encoding ({\em funct3}).}
+    \label{fig:opcodes}
+\end{figure}
+
+\begin{figure}[htbp]
+    \begin{center}
+    \begin{tabular}{@{}O@{}F@{}}
+    \\
+                                   & \instbitrange{2}{0}      \\ \hline
+    \multicolumn{1}{|c|}{MV-CHUNK} & \multicolumn{1}{c|}{000} \\ \hline
+    \multicolumn{1}{|c|}{MV-SIGN}  & \multicolumn{1}{c|}{001} \\ \hline
+    \multicolumn{1}{|c|}{MV-SUM}   & \multicolumn{1}{c|}{010} \\ \hline
+    \multicolumn{1}{|c|}{MV-LEN}   & \multicolumn{1}{c|}{011} \\ \hline
+    \multicolumn{1}{|c|}{MV-EXP}   & \multicolumn{1}{c|}{100} \\ \hline
+    \end{tabular}
+    \end{center}
+    \caption{RISC-V Xvpfloat extension MV opcode encoding ({\em funct3}).}
+    \label{fig:opcodes}
+\end{figure}

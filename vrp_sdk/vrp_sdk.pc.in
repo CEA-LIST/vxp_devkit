@@ -1,0 +1,35 @@
+# Copyright 2023 CEA Commissariat a l'Energie Atomique et aux Energies Alternatives (CEA)
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+# 
+# Authors       : Jerome Fereyre
+# Creation Date : August, 2023
+# Description   : 
+
+prefix="@CMAKE_INSTALL_PREFIX@"
+exec_prefix="${prefix}"
+libdir="${prefix}/lib/static"
+includedir="${prefix}/include"
+bsp=@BSP@
+
+Name: @PROJECT_NAME@
+Description: @CMAKE_PROJECT_DESCRIPTION@
+URL: @CMAKE_PROJECT_HOMEPAGE_URL@
+Version: @PROJECT_VERSION@
+Requires: @pc_req_public@
+Requires.private: @pc_req_private@
+Cflags: @VRP_SDK_C_COMPILE_OPTIONS@ -I"${includedir}"
+Cxxflags: @VRP_SDK_C_COMPILE_OPTIONS@ -I"${includedir}"
+Libs:  -L"${libdir}" -Wl,--whole-archive -l@PROJECT_NAME@  -Wl,--no-whole-archive  -lstdc++
+
