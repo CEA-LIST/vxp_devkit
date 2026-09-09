@@ -34,6 +34,10 @@
     \hline
     BYS\textsubscript{MAX} & 67 & Maximum size in memory (bytes)\\
     \hline
+    IEEE\_p\textsubscript{MAX} & 513 & Maximum precision, implicit bit included, in memory and in arithmetic (Section~\ref{sec:precision_names})\\
+    \hline
+    WP\textsubscript{MAX} & 512 & Maximum working precision (explicit mantissa bits); {\em wp} field 511\\
+    \hline
     \end{tabular}
 \end{center}
 \caption{RISC-V Xvpfloat Rhea derived parameters.}
@@ -41,6 +45,9 @@
 \end{figure}
 
 \subsection{Memory formats support}
+
+In the tables below, Msize is the mantissa size $MS$ of the load/store environment, i.e. the number of explicit mantissa bits.
+The corresponding precision is $IEEE\_p = MS + 1$ (Section~\ref{sec:precision_names}).
 
 Due to issues that may happen when reading subnormal value with $ES = IEEE\_Esize_{MAX}$ (see Section~\ref{sec:subnormalFormatSupport}), we report strict and partial compliance with IEEE-754 2008 standard.
 Partial compliance means that reading a subnormal number $ |x| < 2^{2^{-(ES-1)}}$ may produce incorrect results.
