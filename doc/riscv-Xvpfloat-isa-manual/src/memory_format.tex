@@ -24,6 +24,40 @@ The extendable format is fully defined by 3 parameters: $b$, $p$ and $w$:
 The bit size of a scalar is given by $k=w+p$.
 \end{itemize}
 
+\subsection{Precision names used in this manual}
+\label{sec:precision_names}
+
+Three quantities describe the width of a significand, and they differ by one bit from each other:
+
+\begin{itemize}[topsep=0pt]
+\item $IEEE\_p$: the \emph{precision} in the IEEE 754 sense, the number of significand digits \emph{including} the implicit leading bit.
+It is the $p$ of the standard's notation above, and what a programming language calls the precision of a type (binary32 has $IEEE\_p = 24$, binary64 has $IEEE\_p = 53$).
+\item $t = IEEE\_p - 1$: the number of \emph{explicit} significand bits, i.e. the bits actually stored.
+In memory this is the width of the T field (Figure~\ref{ieee:structure}).
+The load/store environments call it the mantissa size $MS = BIS - ES - 1$ (Section~\ref{sec:ls_ins}), so $MS = t$ and a value loaded with mantissa size $MS$ has precision $IEEE\_p = MS + 1$.
+\item $WP$: the \emph{working precision} of an arithmetic instruction (Section~\ref{sec:arith_ins}).
+It counts explicit significand bits \emph{like $t$, not like $IEEE\_p$}: a result computed at working precision $WP$ has $WP$ explicit bits and a precision of $IEEE\_p = WP + 1$.
+The {\em wp} field of an {\em ec} environment register holds $WP - 1$, so for a result of precision $IEEE\_p$ software writes $IEEE\_p - 2$ into the field.
+\end{itemize}
+
+Inside a {\em P} register the mantissa field M holds $MLEN$ explicit bits and the leading bit is implied (Section~\ref{sec:vpregs}).
+The widest value a register holds, and the widest an arithmetic instruction computes, therefore has $t = WP = MLEN$ explicit bits and precision $IEEE\_p = MLEN + 1$, which is the $p_{max}$ of Table~\ref{tab:ieee-sizes}.
+The memory format and the arithmetic have the same maximum precision.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{l|c|c|c|c}
+                         & $IEEE\_p$ & $t$, $MS$ & $WP$ & {\em wp} field \\ \hline
+binary32                 & 24        & 23        & 23   & 22 \\
+binary64                 & 53        & 52        & 52   & 51 \\
+binary128                & 113       & 112       & 112  & 111 \\
+widest, for $MLEN = 512$ & 513       & 512       & 512  & 511 \\
+\end{tabular}
+\caption{The same width expressed as a precision, as explicit bits, as a working precision and as the {\em wp} field.}
+\label{tab:precision-names}
+\end{center}
+\end{table}
+
 \paragraph{Important note:} An extendable precision format is defined under user control with 2 parameters chosen independently : precision $p$ and range $emax$ (or alternatively $w$ ).
 The user may choose to comply with an interchange format instead: in that particular case, the format is defined with only one parameter (eg its global size), and the other parameters $p$ and $emax$ are given by explicit formulas in Table 3.5 - Binary interchange format parameters of the norm \cite{IEEE754}.
 Specifically, the exponent bit length is given by $round(4*log2(k))-13$. 
@@ -188,7 +222,7 @@ Each environment encodes following information about memory representation of va
 \begin{itemize}[topsep=0pt]
 \item Exponent size (in bits).
 \item Scalar variable footprint in memory (in bytes) is deduced from bit size rounded to the upper byte boundary.
-\item Significand size (including implicit bit) is deduced from total footprint and exponent size.
+\item Significand size (including implicit bit) is deduced from total footprint and exponent size: $IEEE\_p = BIS - ES$, of which $t = MS = BIS - ES - 1$ bits are explicit (Section~\ref{sec:precision_names}).
 \end{itemize}
 There are up to 8 environments descriptors available for variable precision load/store instructions, and 8 more for half/float/double load/store instructions.
 The exact behavior of load and store operations according to the environment is described in Section~\ref{sec:ls_ins}.

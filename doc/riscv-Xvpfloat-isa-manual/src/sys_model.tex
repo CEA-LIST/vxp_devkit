@@ -51,16 +51,17 @@ List of \textbf{mtval} flags for {\em VPFLOAT\_BAD\_CONFIG=48} trap:
 \begin{itemize}[topsep=0pt]
     \item bise: set when configuring an {\em evp} environment register and:
     \begin{itemize}[noitemsep,topsep=0pt]
-        \item either $MS=(BIS-ES-1) \geq IEEE\_Msize_{MAX}$
+        \item either $MS=(BIS-ES-1) > IEEE\_Msize_{MAX}$, i.e. more explicit mantissa bits than the hardware stores ($MS = IEEE\_Msize_{MAX}$, the format of precision $IEEE\_p = IEEE\_Msize_{MAX} + 1$, is accepted)
         \item or $MS < 2$ (mantissa size should be at least 2 bits to hold NaN values)
     \end{itemize}
     \item rme: set when configuring a {\em rm} field of an environment to an unsupported value.
     \item ese: set when configuring an {\em evp} environment register and:
     \begin{itemize}[noitemsep,topsep=0pt]
-        \item either $ES \geq IEEE\_Esize_{MAX}$
+        \item either $ES > IEEE\_Esize_{MAX}$ ($ES = IEEE\_Esize_{MAX}$ is accepted)
         \item or $MS < 2$ (mantissa size should be at least 2 bits to hold NaN values)
     \end{itemize}
-    \item wpe: set when configuring an {\em ec} environment register and $WP \geq IEEE\_Msize_{MAX}$.
+    \item wpe: set when configuring an {\em ec} environment register and the {\em wp} field exceeds $MLEN - 1$, i.e. $WP > IEEE\_Msize_{MAX}$, where $WP$ counts explicit mantissa bits (Section~\ref{sec:precision_names}).
+    The field value $MLEN - 1$ ($WP = MLEN$, precision $MLEN + 1$) is accepted.
     \item void: set when setting a read-only field of an environment register to a non-zero value.
 \end{itemize}
 
@@ -77,7 +78,8 @@ List of Xvpfloat hardware parameters:
     \item LLEN: Size in bits of the L field of internal floating point representation (Figure~\ref{fig:vpr}).
     \item HLEN: Size in bits of the header of internal floating point representation (Figure~\ref{fig:vpr}).
     \item VPLEN: Total size in bits of {\em P} registers.
-    \item IEEE\_Msize\textsubscript{MAX}: Maximum size in bits of IEEE extendable format mantissa in memory supported by the hardware.
+    \item IEEE\_Msize\textsubscript{MAX}: Maximum number of \emph{explicit} mantissa bits ($t$, $MS$) of an IEEE extendable format in memory supported by the hardware.
+    The maximum precision, implicit bit included, is $IEEE\_p_{MAX} = IEEE\_Msize_{MAX} + 1$ (Section~\ref{sec:precision_names}).
     \item IEEE\_Esize\textsubscript{MAX}: Maximum size in bits of IEEE extendable format exponent in memory supported by the hardware.
     \item BIS\textsubscript{MAX}: Maximum size in bits of number in memory supported by hardware.
     \item BYS\textsubscript{MAX}: Maximum size in bytes of number in memory supported by hardware.

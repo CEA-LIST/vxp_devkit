@@ -99,7 +99,8 @@ Result is put in {\em dest} p register (see {\em Numbering} column of Figure \re
 Environment register {\em evp0..7} specified by the instruction provides:
 \begin{itemize}[topsep=0pt]
     \item Exponent size ES.
-    \item Mantissa size MS, deduced from bitsize and exponent size: $MS = BIS-ES-1$. 
+    \item Mantissa size MS, deduced from bitsize and exponent size: $MS = BIS-ES-1$.
+    MS counts the explicit mantissa bits ($t$); the loaded value has precision $IEEE\_p = MS + 1$ (Section~\ref{sec:precision_names}).
     \item Floating point number bitsize BIS in memory, given in bits.
     If bitsize is not a multiple of 8 bits, the mantissa is padded with 0s in least significant bits so that total size is aligned on byte boundaries.
     So byte size BYS in memory is given by $BYS = ceil( \frac{BIS}{8} )$.
@@ -152,7 +153,8 @@ Source is {\em src} p register (see {\em Numbering} column of Figure \ref{fig:vp
 Environment register {\em evp0..7} specified by the instruction provides:
 \begin{itemize}[topsep=0pt]
     \item Exponent size ES.
-    \item Mantissa size MS, deduced from bitsize and exponent size: $MS = BIS-ES-1$. 
+    \item Mantissa size MS, deduced from bitsize and exponent size: $MS = BIS-ES-1$.
+    MS counts the explicit mantissa bits ($t$); the stored value has precision $IEEE\_p = MS + 1$ (Section~\ref{sec:precision_names}).
     \item Floating point number bitsize BIS in memory, given in bits.
     If bitsize is not a multiple of 8 bits, the mantissa is padded with 0s in least significant bits so that total size is aligned on byte boundaries.
     So byte size BYS in memory is given by $BYS = ceil( \frac{BIS}{8} )$.
@@ -632,7 +634,9 @@ Arithmetic instructions take a compute environment as a parameter to the instruc
 Environment register {\em ec0..7} specified by the instruction provides:
 \begin{itemize}[topsep=0pt]
     \item Rounding mode RM used when precision of the result is higher than working precision configured in the environment.
-    \item The working precision WP which defines the bit-accurate mantissa precision of the computation result.
+    \item The working precision WP: the number of \emph{explicit} mantissa bits of the result, exactly as many as the {\em dest P} register keeps.
+    The exact result is rounded once, under RM, to a significand of $WP + 1$ bits including the implicit leading bit.
+    Nothing below that is retained in the register, so a later store to a narrower format rounds again (Section~\ref{sec:precision_names}).
 \end{itemize}
 
 PADD adds {\em src1} with {\em src2 P} registers and put the result in {\em dest P} register.
@@ -640,7 +644,7 @@ PADD adds {\em src1} with {\em src2 P} registers and put the result in {\em dest
 PSUB substracts {\em src2 P} register from {\em src1 P} register and put the result in {\em dest P} register.
 
 PRND moves  {\em src1 P} register to {\em dest P} register. 
-Contrary to PMV.P.P instruction, PRND takes into account the compute environment {\em ec} to round the result to chosen {\em wp} working precision. 
+Contrary to PMV.P.P instruction, PRND takes into account the compute environment {\em ec} to round the result to the chosen working precision, i.e. to $WP$ explicit mantissa bits.
 
 PMUL multiply {\em src1} with {\em src2 P} registers and put the result in {\em dest P} register.
 

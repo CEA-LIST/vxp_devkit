@@ -71,7 +71,7 @@ It includes the following fields:
     \end{itemize}
     \item L: Number of consecutive valid 64 bits chunks
     \item E: Exponent encoded in 2's complement
-    \item M: Mantissa, implicitly normalized (the hidden bit is set to 1)
+    \item M: Mantissa, $MLEN$ explicit bits, implicitly normalized: the leading bit is 1 and is not stored, so a {\em P} register holds up to $MLEN + 1$ bits of precision (Section~\ref{sec:precision_names}).
 \end{itemize}
 
 An alternate view based on 64-bit chunks is used when moving data between {\em X} and {\em P} registers with PMV.P.X and PMV.X.P instructions.
@@ -262,8 +262,10 @@ It includes the following fields (see Section~\ref{sec:arith_ins} for more detai
 \begin{itemize}[topsep=0pt]
     \item rm: Rounding Mode as defined in Table~\ref{rm}.
     Setting this field to an unsupported rounding mode raises an exception.
-    \item wp: a 16-bit field that holds $WP-1$ where WP (Working Precision) is the mantissa precision in bits of the arithmetic computation result.
-    Maximum value authorized for this field is $MLEN-1$.
+    \item wp: a 16-bit field that holds $WP-1$, where WP (Working Precision) is the number of \emph{explicit} mantissa bits of the arithmetic computation result.
+    The implicit leading bit is not counted, so the result has precision $IEEE\_p = WP + 1$ (Section~\ref{sec:precision_names}).
+    For a result of precision $IEEE\_p$, software writes $IEEE\_p - 2$ into this field: 51 for binary64, 22 for binary32.
+    Maximum value authorized for this field is $MLEN-1$, which requests $WP = MLEN$ explicit bits, the full M field, i.e. precision $MLEN + 1$.
     Setting this field to a higher value raises an exception.
 \end{itemize}
 
